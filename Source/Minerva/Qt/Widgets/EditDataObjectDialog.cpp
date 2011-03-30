@@ -1,0 +1,97 @@
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2010, Adam Kubach
+//  All rights reserved.
+//  BSD License: http://www.opensource.org/licenses/bsd-license.html
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Dialog to edit DataObject
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include "EditDataObjectDialog.h"
+#include "ui_EditDataObjectDialog.h"
+
+#include "Minerva/Core/Data/DataObject.h"
+#include "Minerva/Core/Data/PointStyle.h"
+
+using namespace Minerva::QtWidgets;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Constructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+EditDataObjectDialog::EditDataObjectDialog(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::EditDataObjectDialog)
+{
+    ui->setupUi(this);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Destructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+EditDataObjectDialog::~EditDataObjectDialog()
+{
+    delete ui;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Populate user interface from data object.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void EditDataObjectDialog::populate ( Minerva::Core::Data::DataObject* object )
+{
+  if ( !object )
+  {
+    return;
+  }
+
+  Minerva::Core::Data::Style::RefPtr style ( object->style() );
+
+  if ( style )
+  {
+    ui->pointStyleWidget->setPointStyle ( style->pointstyle() );
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Apply any changes.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void EditDataObjectDialog::applyChanges ( Minerva::Core::Data::DataObject* object )
+{
+  if ( !object )
+  {
+    return;
+  }
+
+
+  Minerva::Core::Data::PointStyle::RefPtr pointStyle ( ui->pointStyleWidget->getPointStyle() );
+
+  Minerva::Core::Data::Style::RefPtr style ( object->getOrCreateStyle() );
+  if ( style->pointstyle() )
+  {
+    style->pointstyle()->color ( pointStyle->color() );
+  }
+  else
+  {
+    style->pointstyle ( pointStyle );
+  }
+}

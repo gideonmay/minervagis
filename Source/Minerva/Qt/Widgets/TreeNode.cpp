@@ -1,0 +1,494 @@
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2008, Adam Kubach
+//  All rights reserved.
+//  BSD License: http://www.opensource.org/licenses/bsd-license.html
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Class to encapsulate Feature.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include "Minerva/Qt/Widgets/TreeNode.h"
+#include "Minerva/Qt/Widgets/TreeModel.h"
+
+#include "Usul/Errors/Assert.h"
+#include "Usul/Functions/SafeCall.h"
+
+#include "boost/bind.hpp"
+
+using namespace Minerva::QtWidgets;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Constructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+TreeNode::TreeNode ( Feature *feature, TreeNode *parent ) : BaseClass(),
+  _model ( 0x0 ),
+  _parent ( parent ),
+  _feature ( feature ),
+  _children(),
+  _refCount ( 0 )
+{
+  if ( _feature.valid() )
+  {
+    _feature->addDataChangedListener ( this->queryInterface ( Usul::Interfaces::IUnknown::IID ) );
+  }
+  
+  this->_addChildren();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Destructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+TreeNode::~TreeNode()
+{
+  if ( _feature.valid() )
+    _feature->removeDataChangedListener ( this->queryInterface ( Usul::Interfaces::IUnknown::IID ) );
+
+  // We only need to delete the children.  See the example at: http://doc.qtsoftware.com/4.5/itemviews-editabletreemodel.html
+  qDeleteAll ( _children );
+  _children.clear();
+
+  _model = 0x0;
+  
+  // Better be zero
+  USUL_ASSERT ( _refCount == 0 );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the i'th child.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+TreeNode* TreeNode::child ( int which )
+{
+  return ( which >=0 && which < _children.size() ? _children[which] : 0x0 );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the i'th child.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+const TreeNode* TreeNode::child ( int which ) const
+{
+  return ( which >=0 && which < _children.size() ? _children[which] : 0x0 );
+}
+ 
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the count.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+int TreeNode::count() const
+{
+  return _children.size();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the count.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+int TreeNode::childCount() const
+{
+  return _children.size();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the name.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+QString TreeNode::name() const
+{
+  return ( _feature.valid() ? QString ( _feature->name().c_str() ) : "" );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the node.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Minerva::Core::Data::Feature::RefPtr TreeNode::node() const
+{
+  return _feature;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the parent.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+TreeNode* TreeNode::parent() const
+{
+  return _parent;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the index of node.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+int TreeNode::index ( TreeNode* node ) const
+{
+  return _children.lastIndexOf ( node );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the index of node.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+int TreeNode::indexOfChild ( TreeNode* node ) const
+{
+  return this->index ( node );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Set the check state.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::checkState ( Qt::CheckState state )
+{
+  if ( _feature.valid() )
+    _feature->visibilitySet ( Qt::Unchecked != state );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the check state.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Qt::CheckState TreeNode::checkState() const
+{
+  // Don't try to do anything fancy here, like calculate partially checked state.
+  // It takes too long when there are a lot of children.
+  return ( _feature.valid() && _feature->visibility() ? Qt::Checked : Qt::Unchecked );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Can the item be checked?
+//
+///////////////////////////////////////////////////////////////////////////////
+
+bool TreeNode::isCheckable() const
+{
+  return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Set the model.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::model ( TreeModel* m )
+{
+  _model = m;
+  
+  // Also set the children's model.
+  for ( TreeNodeList::iterator iter = _children.begin(); iter != _children.end(); ++iter )
+  {
+    (*iter)->model ( m );
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the model.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+TreeModel* TreeNode::model()
+{
+  return _model;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the data.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+QVariant TreeNode::data ( int role ) const
+{ 
+  if ( role == Qt::DisplayRole )
+    return this->name();
+  
+  if ( role == Qt::CheckStateRole )
+    return this->checkState();
+  
+  return QVariant();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Set the data.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+bool TreeNode::setData ( const QVariant& value, int role )
+{
+  if ( role == Qt::CheckStateRole )
+  {
+    Qt::CheckState state ( static_cast<Qt::CheckState> ( value.toInt() ) );
+    this->checkState ( state );
+    
+    for ( TreeNodeList::iterator iter = _children.begin(); iter != _children.end(); ++iter )
+    {
+      TreeNode *node ( *iter );
+      node->setData ( value, role );
+    }
+
+    if ( 0x0 != _model )
+    {
+      _model->emitDataChanged ( this );
+      
+      // Walk up the tree.
+      TreeNode *parent ( this->parent() );
+      while ( 0x0 != parent )
+      {
+        _model->emitDataChanged ( parent );
+        parent = parent->parent();
+      }
+    }
+    
+    return true;
+  }
+  
+  return false;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Removes the child at index and returns it.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+TreeNode* TreeNode::takeChild ( int index )
+{
+  //if ( 0x0 != _model )
+  //  _model->executePendingSort();
+  
+  if ( index >= 0 && index < _children.count() )
+  {
+    if ( 0x0 != _model )
+      _model->beginRemoveRows ( this, index, 1 );
+
+    TreeNode *node ( _children.takeAt ( index ) );
+
+    if ( 0x0 != node )
+      node->_parent = 0x0;
+    
+    if ( 0x0 != _model ) 
+      _model->endRemoveRows();
+    
+    return node;
+  }
+  
+  return 0x0;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Add children to this node.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::_addChildren()
+{
+  if ( false == _feature.valid() )
+    return;
+  
+  // Get the number of children.
+  const unsigned int numChildren ( _feature->getNumChildNodes() );
+
+  // Return now if there are no children to add.
+  if ( 0 == numChildren )
+    return;
+  
+  if ( 0x0 != _model )
+    _model->beginInsertRows ( this, 0, numChildren );
+  
+  for ( unsigned int i = 0; i < numChildren; ++i )
+  {
+    Feature::RefPtr tn ( _feature->getChildNode ( i ).get() );
+    TreeNode* child ( new TreeNode ( tn.get(), this ) );
+    child->model ( this->model() );
+    _children.push_back ( child );
+  }
+  
+  if ( 0x0 != _model ) 
+    _model->endInsertRows();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Clear this node.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::_clear()
+{
+  // Return now if there are no children.
+  if ( 0 == _children.size() )
+    return;
+
+  if ( 0x0 != _model )
+    _model->beginRemoveRows ( this, 0, _children.size() );
+  
+  for ( TreeNodeList::iterator iter = _children.begin(); iter != _children.end(); ++iter )
+  {
+    delete *iter;
+  }
+  _children.clear();
+  
+  if ( 0x0 != _model ) 
+    _model->endRemoveRows();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Reference.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::ref()
+{
+  ++_refCount;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Unreference. Qt handles deletion.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::unref ( bool )
+{
+  --_refCount;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Query for interface.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Usul::Interfaces::IUnknown* TreeNode::queryInterface ( unsigned long iid )
+{
+  switch ( iid )
+  {
+    case Usul::Interfaces::IUnknown::IID:
+    case Usul::Interfaces::IDataChangedListener::IID:
+      return static_cast<Usul::Interfaces::IDataChangedListener*> ( this );
+    default:
+      return 0x0;
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Called when data has changed.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::dataChangedNotify ( Usul::Interfaces::IUnknown *caller )
+{
+  QMetaObject::invokeMethod ( this, "_onDataChanged", Qt::QueuedConnection );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Called when data has changed.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::_onDataChanged()
+{
+  // Rebuild the tree.
+  Usul::Functions::safeCall ( boost::bind ( &TreeNode::_rebuildTree, this ), "1646245025" );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Rebuild the tree node for the unknown.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::_rebuildTree()
+{
+  this->_clear();
+  this->_addChildren();
+  
+  if ( 0x0 != _model )
+    _model->emitDataChanged ( this );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Swap locations of children.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void TreeNode::swap ( int index0, int index1 )
+{
+  TreeNode *temp ( this->child ( index0 ) );
+  _children[index0] = this->child ( index1 );
+  _children[index1] = temp;
+  
+  if ( 0x0 != _model )
+    _model->emitDataChanged ( this );
+}

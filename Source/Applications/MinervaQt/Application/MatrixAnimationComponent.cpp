@@ -1,0 +1,137 @@
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2004, Perry L Miller IV
+//  All rights reserved.
+//  BSD License: http://www.opensource.org/licenses/bsd-license.html
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  The component class.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include "MatrixAnimationComponent.h"
+
+#include "Usul/Threads/Safe.h"
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Constructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+MatrixAnimationComponent::MatrixAnimationComponent() : 
+  _matrices(),
+  _current ( 0 ),
+  _timer ( new QTimer )
+{
+  QObject::connect ( _timer, SIGNAL ( timeout() ), this, SLOT ( _onTimeout() ) );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Destructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+MatrixAnimationComponent::~MatrixAnimationComponent()
+{
+  // Remove the timer.
+  this->_timerStop();
+  delete _timer;
+  _timer = 0x0;
+
+  // Remove paths.
+  _matrices.clear();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Animate through the path.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void MatrixAnimationComponent::animateMatrices ( const Matrices &matrices, unsigned int milliSeconds )
+{
+  // Stop current timer.
+  this->_timerStop();
+
+  // Assign members.
+  _matrices = matrices;
+
+  // We're now at the beginning.
+  _current = 0;
+
+  // If we have matrices...
+  if ( false == _matrices.empty() )
+  {
+    // Start the timer.
+    this->_timerStart ( milliSeconds );
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Called when the timer fires (ITimerNotify).
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void MatrixAnimationComponent::_onTimeout()
+{
+  // If there are not matrices then return.
+  if ( true == _matrices.empty() )
+    return;
+
+  // If we got to the end...
+  if ( _current >= _matrices.size() )
+  {
+    _current = 0;
+
+    this->_timerStop();
+    _matrices.clear();
+    return;
+  }
+
+  // Get next matrix.
+  const Matrices::value_type m ( _matrices.at ( _current++ ) );
+
+  emit setViewMatrix ( m );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Start the timer.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void MatrixAnimationComponent::_timerStart ( unsigned int milliSeconds )
+{
+  this->_timerStop();
+  
+  // Add the timer.
+  _timer->start ( milliSeconds );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Stop the timer.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void MatrixAnimationComponent::_timerStop()
+{
+  // Handle repeated calls.
+  if ( 0x0 == _timer )
+    return;
+
+  _timer->stop();
+}

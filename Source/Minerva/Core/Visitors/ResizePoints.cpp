@@ -1,0 +1,60 @@
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2008, Arizona State University
+//  All rights reserved.
+//  BSD License: http://www.opensource.org/licenses/bsd-license.html
+//  Created by: Adam Kubach
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include "Minerva/Core/Visitors/ResizePoints.h"
+#include "Minerva/Core/Data/DataObject.h"
+#include "Minerva/Core/Data/Point.h"
+
+using namespace Minerva::Core::Visitors;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Constructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+ResizePoints::ResizePoints( double factor ) : 
+  BaseClass(),
+  _factor ( factor )
+{
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Destructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+ResizePoints::~ResizePoints()
+{
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Visit a point.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void ResizePoints::visit ( Minerva::Core::Data::DataObject &dataObject )
+{
+#if 0
+  typedef Minerva::Core::Data::Point Point;
+  typedef Minerva::Core::Data::Geometry Geometry;
+  Geometry::RefPtr geometry ( dataObject.geometry() );
+  
+  if ( Point* point = dynamic_cast<Point*> ( geometry.get() ) )
+  {
+    point->size ( point->size() * _factor );
+    dataObject.dirty ( true );
+  }
+#endif
+}
