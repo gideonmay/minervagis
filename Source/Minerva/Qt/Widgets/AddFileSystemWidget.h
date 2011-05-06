@@ -52,7 +52,6 @@ private:
   
   // Pass the filesnames by copy so these functions can be threaded.
   static void      _loadData ( Filenames filenames, Minerva::Core::Data::Feature* parent, DataLoadedCallback callback );
-  static void      _showDataExtents ( Filenames filenames, Minerva::Core::Data::Feature* parent );
 
   Ui::AddFileSystemWidget *_impl;
 };

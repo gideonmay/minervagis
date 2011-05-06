@@ -53,10 +53,6 @@ AddFileSystemWidget::AddFileSystemWidget ( QWidget *parent ) : BaseClass ( paren
   _impl ( new Ui::AddFileSystemWidget )
 {
   _impl->setupUi ( this );
-
-  // Set initial check state.
-  _impl->loadDataCheckBox->setChecked ( true );
-  _impl->showDataExtentsCheckBox->setChecked ( false );
 }
 
 
@@ -171,18 +167,9 @@ void AddFileSystemWidget::apply ( Minerva::Core::Data::Feature* parent, DataLoad
     }
   }
 
-  if ( Qt::Checked == _impl->loadDataCheckBox->checkState() )
-  {
-    // Add the job to the manager.
-    Usul::Jobs::Job::RefPtr job ( Usul::Jobs::create ( boost::bind ( &AddFileSystemWidget::_loadData, names, parent, callback ) ) );
-    Usul::Jobs::Manager::instance().addJob ( job );
-  }
-  if ( Qt::Checked == _impl->showDataExtentsCheckBox->checkState() )
-  {
-    // Add the job to the manager.
-    Usul::Jobs::Job::RefPtr job ( Usul::Jobs::create ( boost::bind ( &AddFileSystemWidget::_showDataExtents, names, parent ) ) );
-    Usul::Jobs::Manager::instance().addJob ( job );
-  }
+  // Add the job to the manager.
+  Usul::Jobs::Job::RefPtr job ( Usul::Jobs::create ( boost::bind ( &AddFileSystemWidget::_loadData, names, parent, callback ) ) );
+  Usul::Jobs::Manager::instance().addJob ( job );
 }
 
 
@@ -228,165 +215,6 @@ void AddFileSystemWidget::_loadData ( Filenames filenames, Minerva::Core::Data::
   if ( callback )
   {
     callback();
-  }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Helper class to get color based on filename.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-namespace Detail
-{
-  class ColorChooser
-  {
-  public:
-
-    typedef std::map<std::string,Usul::Math::Vec4f> ColorMap;
-
-    ColorChooser() : _random ( 0.0f, 1.0f ), _colors() 
-    {
-    }
-
-    Usul::Math::Vec4f operator () ( const std::string& filename )
-    {
-      const std::string ext ( Usul::File::extension ( filename ) );
-      
-      ColorMap::const_iterator iter ( _colors.find ( ext ) );
-      if ( iter != _colors.end() )
-        return iter->second;
-
-      Usul::Math::Vec4f color ( _random(), _random(), _random(), 1.0 );
-      _colors.insert ( std::make_pair ( ext, color ) );
-      return color;
-    }
-  private:
-    Usul::Adaptors::Random<float> _random;
-    ColorMap _colors;
-
-  } colors;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Make polygon for extents of filename.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-namespace Detail
-{
-  Minerva::Core::Data::DataObject* makeExtentsPolygon ( const std::string& filename )
-  {
-    // Typedefs.
-    typedef Minerva::Core::Data::DataObject DataObject;
-    typedef Minerva::Core::Data::Style Style;
-    typedef Minerva::Core::Data::PolyStyle PolyStyle;
-    typedef Minerva::Core::Data::Polygon Polygon;
-    typedef Polygon::Vertices Vertices;
-    typedef Polygon::Vertex Vertex;
-
-    // Make the data object.
-    DataObject::RefPtr object ( new DataObject );
-    object->name ( filename );
-
-    // Read the file.
-    Minerva::Core::Data::Feature::RefPtr feature ( Minerva::Core::Functions::readFile ( filename ) );
-
-    if ( false == feature.valid() )
-      return 0x0;
-
-    // Get the extents values.
-    Minerva::Common::Extents extents ( feature->extents() );
-    const double minLon ( extents.minLon() );
-    const double minLat ( extents.minLat() );
-    const double maxLon ( extents.maxLon() );
-    const double maxLat ( extents.maxLat() );
-
-    // Get the filesize.
-    const unsigned long long size ( boost::filesystem::file_size ( filename ) );
-    const double elevation ( static_cast<double> ( size ) / 100000.0 );
-
-    // Make the polygon.
-    Polygon::RefPtr polygon ( new Polygon );
-
-    // The vertices.
-    Vertices vertices;
-    vertices.push_back ( Vertex ( minLon, minLat, elevation ) );
-    vertices.push_back ( Vertex ( maxLon, minLat, elevation ) );
-    vertices.push_back ( Vertex ( maxLon, maxLat, elevation ) );
-    vertices.push_back ( Vertex ( minLon, maxLat, elevation ) );
-    vertices.push_back ( Vertex ( minLon, minLat, elevation ) );
-
-    polygon->outerBoundary ( vertices );
-    polygon->altitudeMode ( Minerva::Core::Data::ALTITUDE_MODE_RELATIVE_TO_GROUND );
-    polygon->extrude ( true );
-
-    Usul::Math::Vec4f color ( Detail::colors ( filename ) );
-    color[3] = 0.5;
-    
-    Style::RefPtr style ( new Style );
-    PolyStyle::RefPtr polyStyle ( new PolyStyle );
-    polyStyle->color ( color );
-    style->polystyle ( polyStyle.get() );
-
-    object->style ( style );
-    object->geometry ( polygon.get() );
-
-    return object.release();
-  }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Show data extents and file size.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-void AddFileSystemWidget::_showDataExtents( Filenames filenames, Minerva::Core::Data::Feature* parent )
-{
-  Minerva::Core::Data::Container::RefPtr container ( 0x0 != parent ? parent->asContainer() : 0x0 );
-
-  if ( false == container.valid() )
-    return;
-
-  for ( Filenames::const_iterator iter = filenames.begin(); iter != filenames.end(); ++iter )
-  {
-    const std::string filename ( *iter );
-
-    // See if the file is a directory...
-    if ( boost::filesystem::is_directory ( filename ) )
-    {
-      Filenames names;
-
-      typedef boost::filesystem::directory_iterator Iterator;
-
-      Iterator iter ( filename );
-      Iterator end;
-      for( ; iter != end; ++iter )
-      {
-        const boost::filesystem::path &path = iter->path();
-#if BOOST_VERSION >= 104600
-        names.push_back ( path.string() );
-#else
-        names.push_back ( path.native_directory_string() );
-#endif
-      }
-
-      AddFileSystemWidget::_showDataExtents ( names, parent );
-    }
-    else
-    {
-      try
-      {
-        Minerva::Core::Data::DataObject::RefPtr object ( Detail::makeExtentsPolygon ( filename ) );
-        container->add ( object );
-      }
-      USUL_DEFINE_SAFE_CALL_CATCH_BLOCKS ( "1383982710" )
-    }
   }
 }
 
