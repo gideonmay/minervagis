@@ -17,11 +17,12 @@
 
 #include "Minerva/Common/Extents.h"
 
-#include "Usul/Containers/Unknowns.h"
-#include "Usul/Interfaces/IDataChangedListener.h"
+#include "Usul/Interfaces/IUnknown.h"
 #include "Usul/Threads/Atomic.h"
 #include "Usul/Threads/Object.h"
 
+#include "boost/function.hpp"
+#include "boost/signals2/signal.hpp"
 
 namespace Minerva { namespace Common { struct IPlanetCoordinates; struct IElevationDatabase; } }
 
@@ -38,10 +39,13 @@ class DataObject;
 
 class MINERVA_EXPORT Feature : public Minerva::Core::Data::Object
 {
+  typedef Minerva::Core::Data::Object      BaseClass;
+  typedef boost::signals2::signal<void ()> DataChangedListeners;
 public:
-  typedef Minerva::Core::Data::Object         BaseClass;
   typedef Minerva::Core::Data::TimePrimitive  TimePrimitive;
   typedef Minerva::Common::Extents            Extents;
+  typedef DataChangedListeners::slot_type ModifiedCallback;
+  typedef boost::signals2::connection Connection;
 
   USUL_DECLARE_REF_POINTERS ( Feature );
   USUL_DECLARE_IUNKNOWN_MEMBERS;
@@ -89,11 +93,11 @@ public:
 	virtual void           visibilitySet ( bool b );
   bool                   visibility() const;
   
-  // Add the listener (IDataChangedNotify).
-  void                   addDataChangedListener ( Usul::Interfaces::IUnknown *caller );
+  // Add the listener.
+  Connection             addDataChangedListener ( const ModifiedCallback& caller );
   
-  // Remove the listener (IDataChangedNotify).
-  void                   removeDataChangedListener ( Usul::Interfaces::IUnknown *caller );
+  // Remove the listener.
+  void                   removeDataChangedListener ( const Connection& connection );
   
   // Get the number of children (ITreeNode).
   virtual unsigned int        getNumChildNodes() const;
@@ -122,8 +126,6 @@ protected:
 
 private:
 
-  typedef Usul::Interfaces::IDataChangedListener      IDataChangedListener;
-  typedef Usul::Containers::Unknowns<IDataChangedListener> DataChangedListeners;
   typedef Usul::Threads::Object<std::string,Usul::Threads::MutexTraits<Usul::Threads::Mutex> > String;
   typedef Usul::Threads::Atomic<bool> Boolean;
 

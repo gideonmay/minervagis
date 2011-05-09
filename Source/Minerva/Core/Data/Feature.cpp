@@ -68,7 +68,7 @@ Feature::Feature ( const Feature& rhs ) : BaseClass ( rhs ),
   _lookAt ( rhs._lookAt ),
   _timePrimitive ( rhs._timePrimitive ),
   _extents ( rhs._extents ),
-  _dataChangedListeners ( rhs._dataChangedListeners )
+  _dataChangedListeners()
 {
   this->_addMember ( "name", _name.getReference() );
   this->_addMember ( "visibility", _visibility );
@@ -285,9 +285,9 @@ LookAt* Feature::lookAt() const
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void Feature::addDataChangedListener ( Usul::Interfaces::IUnknown *caller )
+Feature::Connection Feature::addDataChangedListener ( const ModifiedCallback& caller )
 {
-  _dataChangedListeners.add ( caller );
+  return _dataChangedListeners.connect ( caller );
 }
 
 
@@ -297,9 +297,9 @@ void Feature::addDataChangedListener ( Usul::Interfaces::IUnknown *caller )
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void Feature::removeDataChangedListener ( Usul::Interfaces::IUnknown *caller )
+void Feature::removeDataChangedListener ( const Connection& connection )
 {
-  _dataChangedListeners.remove ( caller );
+  _dataChangedListeners.disconnect ( connection );
 }
 
 
@@ -311,7 +311,7 @@ void Feature::removeDataChangedListener ( Usul::Interfaces::IUnknown *caller )
 
 void Feature::_notifyDataChangedListeners()
 {
-  _dataChangedListeners.for_each ( std::bind2nd ( std::mem_fun ( &IDataChangedListener::dataChangedNotify ), static_cast<Usul::Interfaces::IUnknown*> ( 0x0 ) ) );
+  _dataChangedListeners();
 }
 
 

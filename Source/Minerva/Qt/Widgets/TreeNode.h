@@ -20,8 +20,6 @@
 
 #include "Minerva/Core/Data/Feature.h"
 
-#include "Usul/Interfaces/IDataChangedListener.h"
-
 #include "QtCore/QList"
 #include "QtCore/QString"
 #include "QtCore/QVariant"
@@ -32,17 +30,13 @@ namespace QtWidgets {
   class TreeModel;
   
 class MINERVA_QT_WIDGETS_EXPORT TreeNode : 
-  public QObject,
-  public Usul::Interfaces::IDataChangedListener
+  public QObject
 {
   Q_OBJECT;
 public:
   typedef QObject BaseClass;
   typedef QList<TreeNode*> TreeNodeList;
   typedef Minerva::Core::Data::Feature Feature;
-  
-  USUL_DECLARE_QUERY_POINTERS ( TreeNode );
-  USUL_DECLARE_IUNKNOWN_MEMBERS;
   
   TreeNode ( Feature *feature, TreeNode* parent = 0x0 );
   ~TreeNode();
@@ -97,7 +91,7 @@ private:
   void              _rebuildTree();
   
   // Called when data has changed.
-  virtual void      dataChangedNotify ( Usul::Interfaces::IUnknown *caller );
+  void              dataChangedNotify();
   
   friend class TreeModel;
   
@@ -112,8 +106,8 @@ private:
   TreeModel* _model;
   TreeNode*  _parent;
   Feature::RefPtr _feature;
+  Feature::Connection _connection;
   TreeNodeList _children;
-  unsigned int _refCount;
 };
 
 

@@ -34,12 +34,12 @@ TreeNode::TreeNode ( Feature *feature, TreeNode *parent ) : BaseClass(),
   _model ( 0x0 ),
   _parent ( parent ),
   _feature ( feature ),
-  _children(),
-  _refCount ( 0 )
+  _connection(),
+  _children()
 {
   if ( _feature.valid() )
   {
-    _feature->addDataChangedListener ( this->queryInterface ( Usul::Interfaces::IUnknown::IID ) );
+    _connection = _feature->addDataChangedListener ( boost::bind ( &TreeNode::dataChangedNotify, this ) );
   }
   
   this->_addChildren();
@@ -54,17 +54,13 @@ TreeNode::TreeNode ( Feature *feature, TreeNode *parent ) : BaseClass(),
 
 TreeNode::~TreeNode()
 {
-  if ( _feature.valid() )
-    _feature->removeDataChangedListener ( this->queryInterface ( Usul::Interfaces::IUnknown::IID ) );
+  _connection.disconnect();
 
   // We only need to delete the children.  See the example at: http://doc.qtsoftware.com/4.5/itemviews-editabletreemodel.html
   qDeleteAll ( _children );
   _children.clear();
 
   _model = 0x0;
-  
-  // Better be zero
-  USUL_ASSERT ( _refCount == 0 );
 }
 
 
@@ -395,54 +391,11 @@ void TreeNode::_clear()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Reference.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-void TreeNode::ref()
-{
-  ++_refCount;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Unreference. Qt handles deletion.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-void TreeNode::unref ( bool )
-{
-  --_refCount;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Query for interface.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-Usul::Interfaces::IUnknown* TreeNode::queryInterface ( unsigned long iid )
-{
-  switch ( iid )
-  {
-    case Usul::Interfaces::IUnknown::IID:
-    case Usul::Interfaces::IDataChangedListener::IID:
-      return static_cast<Usul::Interfaces::IDataChangedListener*> ( this );
-    default:
-      return 0x0;
-  }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
 //  Called when data has changed.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void TreeNode::dataChangedNotify ( Usul::Interfaces::IUnknown *caller )
+void TreeNode::dataChangedNotify()
 {
   QMetaObject::invokeMethod ( this, "_onDataChanged", Qt::QueuedConnection );
 }
