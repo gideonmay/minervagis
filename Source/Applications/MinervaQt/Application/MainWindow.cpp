@@ -31,6 +31,7 @@
 #include "Helios/Menus/MenuAdapter.h"
 
 #include "Usul/Components/Manager.h"
+#include "Usul/Errors/Assert.h"
 #include "Usul/Registry/Database.h"
 #include "Usul/Threads/Named.h"
 

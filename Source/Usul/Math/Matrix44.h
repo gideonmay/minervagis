@@ -35,7 +35,7 @@ template
 <
   typename T,
   typename Index_ = unsigned int,
-  typename ErrorChecker_ = Usul::Errors::AssertPolicy
+  typename ErrorChecker_ = Usul::Math::ErrorPolicy<Index_>
 >
 class Matrix44
 {
@@ -764,9 +764,6 @@ public:
   template < class Vector3_, typename Real_ > void makeRotation
     ( Real_ cosine, Real_ sine, const Vector3_ &axis )
   {
-    ErrorChecker ( 1076182690, cosine >= -1 && cosine <= 1 );
-    ErrorChecker ( 1076182690, sine   >= -1 && sine   <= 1 );
-
     const Real_ x ( axis[0] );
     const Real_ y ( axis[1] );
     const Real_ z ( axis[2] );

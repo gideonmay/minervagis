@@ -29,7 +29,7 @@ template
 <
   typename T,
   typename Index_ = unsigned int,
-  typename ErrorChecker_ = Usul::Errors::AssertPolicy
+  typename ErrorChecker_ = Usul::Math::ErrorPolicy<Index_>
 >
 class Quaternion
 {

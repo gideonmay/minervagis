@@ -15,6 +15,7 @@
 
 #include "Minerva/Document/OffScreenView.h"
 #include "Minerva/OsgTools/OffScreenRendererPBuffer.h"
+#include "Usul/Errors/Assert.h"
 #include "Usul/System/Sleep.h"
 
 #include "osgDB/WriteFile"

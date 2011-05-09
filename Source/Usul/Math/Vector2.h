@@ -17,7 +17,7 @@
 #define _USUL_TEMPLATE_2D_VECTOR_CLASS_H_
 
 #include "Usul/Math/Functions.h"
-#include "Usul/Errors/AssertPolicy.h"
+#include "Usul/Math/ErrorPolicy.h"
 
 
 namespace Usul {
@@ -28,7 +28,7 @@ template
 <
   typename T,
   typename Index_ = unsigned int,
-  typename ErrorChecker_ = Usul::Errors::AssertPolicy
+  typename ErrorChecker_ = Usul::Math::ErrorPolicy<Index_>
 >
 class Vector2
 {
