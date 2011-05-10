@@ -18,6 +18,7 @@
 #include "Usul/Components/Loader.h"
 #include "Usul/Components/Manager.h"
 #include "Usul/DLL/LibraryPool.h"
+#include "Usul/Errors/AssertPolicy.h"
 #include "Usul/Errors/CompositePolicy.h"
 #include "Usul/Errors/ThrowingPolicy.h"
 #include "Usul/Errors/InvalidParameter.h"
