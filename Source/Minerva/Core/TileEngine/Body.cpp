@@ -22,7 +22,6 @@
 #include "Minerva/Core/Utilities/Atmosphere.h"
 #include "Minerva/Core/Visitor.h"
 
-#include "Minerva/OsgTools/Ray.h"
 #include "Minerva/OsgTools/ConvertVector.h"
 #include "Minerva/OsgTools/ConvertMatrixTransform.h"
 #include "Minerva/OsgTools/Group.h"
