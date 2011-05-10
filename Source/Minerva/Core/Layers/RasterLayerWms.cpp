@@ -22,7 +22,7 @@
 
 #include "Minerva/Core/Layers/RasterLayerWms.h"
 #include "Minerva/Network/Http.h"
-#include "Minerva/Network/WMS.h"
+#include "Minerva/Network/Names.h"
 
 #include "Usul/Factory/RegisterCreator.h"
 #include "Usul/File/Path.h"
@@ -105,22 +105,10 @@ Minerva::Core::Data::Feature* RasterLayerWms::clone() const
 
 void RasterLayerWms::_download ( const std::string& file, const TileKey& key, unsigned int width, unsigned int height, Usul::Jobs::Job *job, IUnknown * )
 {
-  // Get url.
-  std::string baseUrl ( this->urlBase() );
-  if ( true == baseUrl.empty() )
-    return;
-
-  // Get all the options.
-  Options options ( this->_options ( key.extents(), width, height, key.level() ) );
-  if ( true == options.empty() )
-    return;
-
-  // Make wms object.
-  Minerva::Network::WMS wms ( baseUrl, file, options.begin(), options.end() );
-
   // Download the file.
   Usul::Interfaces::IUnknown::QueryPtr caller ( job );
-  wms.download ( this->timeoutMilliSeconds(), this->maxNumAttempts(), caller.get() );
+  const std::string url ( this->urlFull ( key, width, height ) );
+  Minerva::Network::Http::download ( url, file, this->timeoutMilliSeconds(), caller );
 }
 
 
@@ -138,9 +126,16 @@ std::string RasterLayerWms::urlFull ( const TileKey& key, unsigned int width, un
   // Get all the options.
   Options options ( this->_options ( key.extents(), width, height, key.level() ) );
 
-  // Ask the WMS class for the full url.
-  const std::string fullUrl ( Minerva::Network::WMS::fullUrl ( baseUrl, options ) );
-  return fullUrl;
+  std::ostringstream url;
+  url << baseUrl;
+  for ( Options::const_iterator i = options.begin(); i != options.end(); ++i )
+  {
+    const std::string name  ( i->first  );
+    const std::string value ( i->second );
+    url << ( ( options.begin() == i ) ? '?' : '&' ) << name << '=' << value;
+  }
+
+  return url.str();
 }
 
 
