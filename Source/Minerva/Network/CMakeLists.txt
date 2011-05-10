@@ -29,7 +29,6 @@ SET ( HEADERS
 ./GeoCode.h
 ./Http.h
 ./Names.h
-./WMS.h
 )
 
 
@@ -43,7 +42,6 @@ SET (SOURCES
 ./Download.cpp
 ./GeoCode.cpp
 ./Http.cpp
-./WMS.cpp
 )
 
 SET ( TARGET_NAME MinervaNetwork )
