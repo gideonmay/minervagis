@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>809</width>
+    <height>535</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>809</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <widget class="QMenu" name="menuRecent_Files">
+     <property name="title">
+      <string>Recent Files</string>
+     </property>
+    </widget>
+    <addaction name="actionNew"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSave_As"/>
+    <addaction name="separator"/>
+    <addaction name="actionExport_Image"/>
+    <addaction name="separator"/>
+    <addaction name="menuRecent_Files"/>
+    <addaction name="separator"/>
+    <addaction name="actionWork_Offline"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="separator"/>
+    <addaction name="actionEdit"/>
+    <addaction name="actionReset_View"/>
+    <addaction name="separator"/>
+    <addaction name="actionFrame_Dump"/>
+    <addaction name="separator"/>
+    <addaction name="actionShow_Position"/>
+    <addaction name="actionShow_Eye_Altitude"/>
+    <addaction name="actionShow_Job_Feedback"/>
+    <addaction name="actionShow_Date_Feedback"/>
+    <addaction name="actionShow_Borders"/>
+    <addaction name="actionAllow_Splitting"/>
+    <addaction name="actionKeep_Detail"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menuCamera">
+    <property name="title">
+     <string>Camera</string>
+    </property>
+    <addaction name="actionNew_Path"/>
+    <addaction name="separator"/>
+    <addaction name="actionAppend_Camera"/>
+    <addaction name="actionPrepend_Camera"/>
+    <addaction name="actionInsert_Between_Closest"/>
+    <addaction name="actionRemove_Closest"/>
+    <addaction name="actionReplace_Closest"/>
+    <addaction name="actionClose_Path"/>
+    <addaction name="separator"/>
+    <addaction name="actionPlay_Forward"/>
+    <addaction name="actionPlay_Backward"/>
+    <addaction name="actionStopCameraAnimation"/>
+    <addaction name="separator"/>
+    <addaction name="separator"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuCamera"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QDockWidget" name="dockWidget">
+   <property name="windowTitle">
+    <string>FlyTo</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <property name="margin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="Minerva::QtWidgets::FlyTo" name="_flyTo" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_3">
+   <property name="windowTitle">
+    <string>Layers</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="margin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="Minerva::QtWidgets::LayersTree" name="_layers" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="actionD">
+   <property name="text">
+    <string>d</string>
+   </property>
+  </action>
+  <action name="actionGIS_Favorites">
+   <property name="text">
+    <string>GIS Favorites</string>
+   </property>
+  </action>
+  <action name="actionText_Output">
+   <property name="text">
+    <string>Text Output</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="text">
+    <string>New</string>
+   </property>
+  </action>
+  <action name="actionOPen">
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="actionExport_Image">
+   <property name="text">
+    <string>Export Image..</string>
+   </property>
+  </action>
+  <action name="actionSave_As">
+   <property name="text">
+    <string>Save As...</string>
+   </property>
+  </action>
+  <action name="actionD_2">
+   <property name="text">
+    <string>d</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionWork_Offline">
+   <property name="text">
+    <string>Work Offline</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="text">
+    <string>Open...</string>
+   </property>
+  </action>
+  <action name="actionSnap_Shot">
+   <property name="text">
+    <string>Snap Shot...</string>
+   </property>
+  </action>
+  <action name="actionReset_View">
+   <property name="text">
+    <string>Reset View</string>
+   </property>
+  </action>
+  <action name="actionAuto">
+   <property name="text">
+    <string>Auto</string>
+   </property>
+  </action>
+  <action name="actionEdit">
+   <property name="text">
+    <string>Edit Near Far Ratio...</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="text">
+    <string>Start</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionNew_Path">
+   <property name="text">
+    <string>New Path</string>
+   </property>
+  </action>
+  <action name="actionAppend_Camera">
+   <property name="text">
+    <string>Append Camera</string>
+   </property>
+  </action>
+  <action name="actionPrepend_Camera">
+   <property name="text">
+    <string>Prepend Camera</string>
+   </property>
+  </action>
+  <action name="actionInsert_Between_Closest">
+   <property name="text">
+    <string>Insert Between Closest</string>
+   </property>
+  </action>
+  <action name="actionRemove_Closest">
+   <property name="text">
+    <string>Remove Closest</string>
+   </property>
+  </action>
+  <action name="actionClose_Path">
+   <property name="text">
+    <string>Close Path</string>
+   </property>
+  </action>
+  <action name="actionReplace_Closest">
+   <property name="text">
+    <string>Replace Closest</string>
+   </property>
+  </action>
+  <action name="actionPlay_Forward">
+   <property name="text">
+    <string>Play Forward</string>
+   </property>
+  </action>
+  <action name="actionPlay_Backward">
+   <property name="text">
+    <string>Play Backward</string>
+   </property>
+  </action>
+  <action name="actionNext_Camera">
+   <property name="text">
+    <string>Next Camera</string>
+   </property>
+  </action>
+  <action name="actionPrevious_Camera">
+   <property name="text">
+    <string>Previous Camera</string>
+   </property>
+  </action>
+  <action name="actionStopCameraAnimation">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="action1">
+   <property name="text">
+    <string>1</string>
+   </property>
+  </action>
+  <action name="action2">
+   <property name="text">
+    <string>2</string>
+   </property>
+  </action>
+  <action name="action3">
+   <property name="text">
+    <string>3</string>
+   </property>
+  </action>
+  <action name="action4">
+   <property name="text">
+    <string>4</string>
+   </property>
+  </action>
+  <action name="action10">
+   <property name="text">
+    <string>10</string>
+   </property>
+  </action>
+  <action name="action20">
+   <property name="text">
+    <string>25</string>
+   </property>
+  </action>
+  <action name="action30">
+   <property name="text">
+    <string>30</string>
+   </property>
+  </action>
+  <action name="action50">
+   <property name="text">
+    <string>50</string>
+   </property>
+  </action>
+  <action name="action100">
+   <property name="text">
+    <string>100</string>
+   </property>
+  </action>
+  <action name="action500">
+   <property name="text">
+    <string>500</string>
+   </property>
+  </action>
+  <action name="action1000">
+   <property name="text">
+    <string>1000</string>
+   </property>
+  </action>
+  <action name="actionLoop">
+   <property name="text">
+    <string>Loop</string>
+   </property>
+  </action>
+  <action name="actionFrame_Dump">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Frame Dump</string>
+   </property>
+  </action>
+  <action name="actionShow_Position">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Position</string>
+   </property>
+  </action>
+  <action name="actionShow_Eye_Altitude">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Eye Altitude</string>
+   </property>
+  </action>
+  <action name="actionIncreaseDetail">
+   <property name="text">
+    <string>Increase</string>
+   </property>
+  </action>
+  <action name="actionDecreaseDetail">
+   <property name="text">
+    <string>Decrease</string>
+   </property>
+  </action>
+  <action name="actionShow_Job_Feedback">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show Job Feedback</string>
+   </property>
+  </action>
+  <action name="actionShow_Date_Feedback">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Date Feedback</string>
+   </property>
+  </action>
+  <action name="actionShow_Borders">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Borders</string>
+   </property>
+  </action>
+  <action name="actionAllow_Splitting">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Allow Splitting</string>
+   </property>
+  </action>
+  <action name="actionKeep_Detail">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Keep Detail</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Minerva::QtWidgets::FlyTo</class>
+   <extends>QWidget</extends>
+   <header>Minerva/Qt/Widgets/FlyTo.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Minerva::QtWidgets::LayersTree</class>
+   <extends>QWidget</extends>
+   <header>Minerva/Qt/Widgets/LayersTree.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

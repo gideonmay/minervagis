@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<plugins>
+
+  <!-- Sample plugin file for Minerva. -->
+
+  <plugin load="true" file="WmsLayerQt.plug" />
+  <plugin load="true" file="PostGISLayerQt.plug" />
+  <plugin file="QtArcIMS.plug" />
+  <plugin file="QtCustomGeometry.plug" />
+
+  <plugin load="true" file="GDALReadImage.plug" />
+
+  <library file="MinervaGdal" />
+  <library file="MinervaGeoNames" />
+  <library file="MinervaGeoRSS" />
+  <library file="MinervaKml" />
+
+</plugins>

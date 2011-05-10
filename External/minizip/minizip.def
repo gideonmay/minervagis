@@ -1,0 +1,26 @@
+LIBRARY
+EXPORTS
+        unzOpen
+        unzClose
+        unzGetGlobalInfo
+        unzGetCurrentFileInfo
+        unzGoToFirstFile
+        unzGoToNextFile
+        unzOpenCurrentFile
+        unzReadCurrentFile
+        unzOpenCurrentFile3
+        unztell
+        unzeof
+        unzCloseCurrentFile
+        unzGetGlobalComment
+        unzStringFileNameCompare
+        unzLocateFile
+        unzGetLocalExtrafield
+        unzOpen2
+        unzOpenCurrentFile2
+        unzOpenCurrentFilePassword
+
+        unzGetFilePos
+        unzGoToFilePos
+
+        fill_win32_filefunc

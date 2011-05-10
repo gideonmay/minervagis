@@ -1,0 +1,368 @@
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2008, Adam Kubach
+//  All rights reserved.
+//  BSD License: http://www.opensource.org/licenses/bsd-license.html
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include "Minerva/Plugins/GeoNames/CityLayer.h"
+#include "Minerva/Core/DiskCache.h"
+#include "Minerva/Core/TileEngine/Tile.h"
+#include "Minerva/Network/Http.h"
+
+#include "XmlTree/Document.h"
+
+#include "Usul/Convert/Convert.h"
+#include "Usul/Factory/RegisterCreator.h"
+#include "Usul/Functions/SafeCall.h"
+#include "Usul/Registry/Database.h"
+#include "Usul/Threads/Safe.h"
+
+#include "Minerva/OsgTools/Font.h"
+
+#include "osg/Geode"
+#include "osg/MatrixTransform"
+
+#include "osgText/FadeText"
+
+#include "boost/bind.hpp"
+#include "boost/filesystem.hpp"
+
+using namespace Minerva::Layers::GeoNames;
+
+
+USUL_FACTORY_REGISTER_CREATOR ( CityLayer );
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Constructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+CityLayer::CityLayer() : BaseClass(),
+  _citiesToAdd()
+{
+  this->_nameSet ( "City Names" );
+  this->extents ( Extents ( -180, -90, 180, 90 ) );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Destructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+CityLayer::~CityLayer()
+{
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Deserialize.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void CityLayer::deserialize( const XmlTree::Node &node )
+{
+  BaseClass::deserialize ( node );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Serialize.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void CityLayer::serialize ( XmlTree::Node &parent ) const
+{
+  Serialize::XML::DataMemberMap dataMemberMap ( Usul::Threads::Safe::get ( this->mutex(), _dataMemberMap ) );
+  
+  // Don't serialize the layers.
+  dataMemberMap.erase ( "layers" );
+  
+  // Serialize.
+  dataMemberMap.serialize ( parent );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Tile has been added.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void CityLayer::tileAddNotify ( Usul::Interfaces::IUnknown::RefPtr child, Usul::Interfaces::IUnknown::RefPtr )
+{
+  Minerva::Common::ITile::QueryPtr iTile ( child );
+  Minerva::Core::TileEngine::Tile::RefPtr tile ( ( true == iTile.valid() ) ? iTile->tile() : 0x0 );
+  if ( false == tile.valid() )
+    return;
+
+  Minerva::Core::TileEngine::Extents extents ( tile->extents() );
+
+  // Get the cities that lay within this tile.
+  Cities cities ( this->citiesGet ( extents, tile->level(), 10 ) );
+
+  Guard guard ( this->mutex() );
+  _citiesToAdd.insert ( std::make_pair ( child, cities ) );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Tile has been removed.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void CityLayer::tileRemovedNotify ( Usul::Interfaces::IUnknown::RefPtr child, Usul::Interfaces::IUnknown::RefPtr )
+{
+  // Remove the node from the tile.
+  this->_removeNode ( child );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get all the cities in the extents up to the maximum number allowed.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+CityLayer::Cities CityLayer::citiesGet ( const Extents& extents, unsigned int level, unsigned int maximumItems ) const
+{
+  const std::string filename ( this->_makeCacheDirectory ( extents, level ) );
+
+  // If it's not in the cache.
+  if ( false == boost::filesystem::exists ( filename ) )
+  {
+    // http://www.geonames.org/export/JSON-webservices.html#citiesJSON
+    const std::string url ( "http://ws.geonames.org/cities" );
+    const std::string request ( Usul::Strings::format ( url, "?", 
+                                "north=",  extents.maximum()[1], 
+                                "&south=", extents.minimum()[1], 
+                                "&east=",  extents.minimum()[0], 
+                                "&west=",  extents.maximum()[0], 
+                                "&maxRows=", maximumItems ) );
+
+    bool succeeded ( false );
+
+    // Download to the temp file.
+    try
+    {
+      // The timeout.
+      const unsigned int timeout ( Usul::Registry::Database::instance()["network_download"]["cities_layer"]["timeout_milliseconds"].get<unsigned int> ( 600000, true ) );
+
+      Minerva::Network::Http::download ( request, filename, timeout );
+      succeeded = true;
+    }
+    USUL_DEFINE_SAFE_CALL_CATCH_BLOCKS ( "3454987436" );
+
+    // Return if download did not succeed.
+    if ( false == succeeded )
+      return Cities();
+  }
+
+  // Vector for the cities.
+  Cities cities;
+
+  // Download.
+  this->_citiesGet ( cities, filename, extents, level, maximumItems );
+
+  // Remove the file if we didn't get any cities.
+  if ( true == cities.empty() )
+    boost::filesystem::remove ( filename );
+
+  // return the answer.
+  return cities;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Add the node to the tile.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void CityLayer::_addNode ( Usul::Interfaces::IUnknown::RefPtr unknown, osg::Node* node )
+{
+  if ( 0x0 != node )
+  {
+    Minerva::Common::ITile::QueryPtr iTile ( unknown );
+    Minerva::Core::TileEngine::Tile::RefPtr tile ( ( true == iTile.valid() ) ? iTile->tile() : 0x0 );
+    if ( true == tile.valid() )
+    {
+      // Add the node to the tile.
+      tile->addVectorData ( node );
+    }
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Tile was removed.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void CityLayer::_removeNode ( Usul::Interfaces::IUnknown::RefPtr tile )
+{
+  // Cannot remove the node from the tile.  This causes a crash.
+  // This should not cause a memory leak because the tiles are purged in the body.
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Make text.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+namespace Detail
+{
+  osg::Node* makeTextForCity ( const Minerva::Core::TileEngine::Tile& tile, const City& city, unsigned int size = 45, double altitude = 2000 )
+  {
+    osg::ref_ptr<osg::MatrixTransform> mt ( new osg::MatrixTransform );
+
+    // Get the position.
+    osg::Vec3d position;
+    tile.latLonHeightToXYZ ( city.location()[1], city.location()[0], altitude, position );
+
+    // Set the matrix.
+    mt->setMatrix ( osg::Matrix::translate ( position ) );
+
+    // Make the geode.
+    osg::ref_ptr<osg::Geode> geode ( new osg::Geode );
+
+    // Make the text.
+    osg::ref_ptr<osgText::Text> text ( new osgText::Text );
+    text->setFont ( OsgTools::Font::defaultFont() );
+    text->setText ( city.name() );
+    text->setPosition ( osg::Vec3f ( 0.0, 0.0, 0.0 ) );
+    text->setColor( osg::Vec4 ( 1.0, 1.0, 1.0, 1.0 ) );
+    text->setCharacterSize ( size );
+    text->setCharacterSizeMode ( osgText::Text::SCREEN_COORDS );
+    text->setAutoRotateToScreen ( true );
+
+    // Add the text to the geode.
+    geode->addDrawable ( text.get() );
+
+    // Add the geode.
+    mt->addChild ( geode.get() );
+
+    return mt.release();
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Build the scene.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+osg::Node* CityLayer::_buildScene ( Usul::Interfaces::IUnknown::RefPtr unknown, const Cities& cities )
+{
+  Minerva::Common::ITile::QueryPtr iTile ( unknown );
+  Minerva::Core::TileEngine::Tile::RefPtr tile ( ( true == iTile.valid() ) ? iTile->tile() : 0x0 );
+  if ( false == tile.valid() )
+    return 0x0;
+
+  // Make a new group.
+  osg::ref_ptr<osg::Group> group ( new osg::Group );
+
+  // Loop over the cities and create text.
+  for ( Cities::const_iterator iter = cities.begin(); iter != cities.end(); ++iter )
+  {
+    group->addChild ( Detail::makeTextForCity ( *tile, *iter ) );
+  }
+
+  // Return the group.
+  return group.release();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get all the cities in the extents up to the maximum number allowed.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void CityLayer::_citiesGet ( Cities& cities, const std::string& filename, const Extents& extents, unsigned int level, unsigned int maximumItems ) const
+{
+  // Create the Xml Document.
+  XmlTree::Document::RefPtr doc ( new XmlTree::Document );
+  doc->load ( filename );
+
+  // Get all the GeoNames.
+  typedef XmlTree::Node::Children Children;
+  Children children ( doc->find ( "geoname", false ) );
+
+  // Iterate over the nodes.
+  for ( Children::const_iterator iter = children.begin(); iter != children.end(); ++iter )
+  {
+    cities.push_back ( City ( *(*iter) ) );
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Make the cache directory.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+std::string CityLayer::_makeCacheDirectory ( const Extents& extents, unsigned int level ) const
+{
+  Minerva::Common::TileKey::RefPtr tileKey ( new Minerva::Common::TileKey );
+  tileKey->extents ( extents );
+  tileKey->level ( level );
+
+  Minerva::Common::LayerKey::RefPtr layerKey ( new Minerva::Common::LayerKey ( "GeoNames_Cities", 0 ) );
+  const std::string directory ( Minerva::Core::DiskCache::instance().getCacheDirectory ( *layerKey, *tileKey ) );
+  
+  // Make sure the directory is created.
+  {
+    Guard guard ( this );
+    boost::filesystem::create_directories ( directory );
+  }
+  
+  // Make the filename.
+  const std::string filename ( Usul::Strings::format ( directory, Minerva::Core::DiskCache::makeExtentsString ( extents ), ".xml" ) );
+
+  // Return the filename.
+  return filename;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Update.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void CityLayer::updateNotify ( Minerva::Core::Data::CameraState* camera, Minerva::Common::IPlanetCoordinates *planet, Minerva::Common::IElevationDatabase *elevation )
+{
+  // Get a copy of the cities.
+  CitiesToAdd citiesToAdd ( Usul::Threads::Safe::get ( this->mutex(), _citiesToAdd ) );
+
+  // Clear the cities to add data member.
+  {
+    Guard guard ( this->mutex() );
+    _citiesToAdd.clear();
+  }
+
+  // Loop through the tiles and add the cities.
+  for ( CitiesToAdd::iterator iter = citiesToAdd.begin(); iter != citiesToAdd.end(); ++iter )
+  {
+    // Build the scene.
+    osg::ref_ptr<osg::Node> node ( this->_buildScene ( iter->first, iter->second ) );
+
+    // Add the node to the tile.
+    this->_addNode ( iter->first, node.get() );
+  }
+}

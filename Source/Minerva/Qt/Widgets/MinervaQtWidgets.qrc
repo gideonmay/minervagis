@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="Icons">
+    <file>Icons/animation_control_play_backward.png</file>
+    <file>Icons/animation_control_play_forward.png</file>
+    <file>Icons/animation_control_step_backward.png</file>
+    <file>Icons/animation_control_step_forward.png</file>
+    <file>Icons/animation_control_stop.png</file>
+  </qresource>
+</RCC>

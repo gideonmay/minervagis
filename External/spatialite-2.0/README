@@ -1,0 +1,107 @@
+  --------------------- spatialite ------------------------
+
+PLEASE read the following information.
+
+Installation:
+-------------
+
+The default destination path prefix for installed files is /usr/local.
+Results from the installation script will be placed into subdirectories
+include and lib.  If this default path prefix is proper, then execute:
+
+	./configure
+
+If another path prefix is required, then execute:
+
+	./configure --prefix=/my/path
+
+In either case, the directory of the prefix path must exist and be
+writable by the installer.
+
+After executing configure, execute:
+
+	make
+	make install
+
+Or even better, you can *strip* any executable binary, in order
+to eliminate any debugging symbol, and thus widely reducing
+their size:
+
+	cd src/shell
+        make install-strip
+
+----------
+	
+The only external dependencies needed in order to build 'spatialite' 
+are the PROJ.4 and GEOS devel-packages.  Please read the build notes at:
+ http://www.gaia-gis.it/spatialite-2.0/build-notes.html
+
+You can build 'spatialite' without including GEOS; GEOS is
+a quite heavy-weighted library, and you may well prefer
+to build a light-weighted version of 'spatialite' [loosing
+some advanced features, by the way, but saving lots of memory]; 
+if you want to do such a thing:
+# ./configure --enable-geos=no
+	[disabling GEOS saves some 1.200 KB]
+
+You can even decide not to include PROJ.4:
+# ./configure --enable-proj=no
+	[disabling PROJ.4 saves some 170 KB]
+
+If you wish to build an extra-light-weighted version of 
+'spatialite' you can obviously omit both PROJ.4 and GEOS:
+# ./configure --enable-geos=no  --enable-proj=no
+
+Linux Build
+-----------
+
+Building 'spatialite' under Linux does not require any special 
+setting; we'll suppose you have unpacked the sources as ./spatialite-2.0
+
+# cd spatialite-2.0
+# ./configure
+# make
+# sudo make install
+# cd src/shell
+# sudo make install-strip
+
+
+
+
+Windows Build
+-------------
+
+Building 'spatialite' under Windows is only a little bit more complex.
+We suppose you are using the MinGW compiler and the MSys shell.
+We'll suppose as well you have unpacked the sources as C:\spatialite-2.0
+
+$ cd c:/spatialite-2.0
+$ export "CFLAGS=-I/usr/local/include"
+$ export "LDFLAGS=-L/usr/local/lib"
+$ ./configure --target=mingw32
+$ make
+$ make install-strip
+$ cd src/shell
+$ make install-strip
+
+
+
+MacOsX Build
+-------------
+
+Building 'spatialite' under MacOsX isn't at all a difficult task.
+We'll suppose you have unpacked the sources as ./spatialite-2.0
+
+# cd spatialite-2.0
+# ./configure
+# make
+# sudo make install
+# cd src/shell
+# sudo make install-strip
+
+IMPORTANT NOTICE: this will build an executable for your
+specific platform. i.e. when building on a PCC Mac,
+resulting binary will be targeted to run on PPC anyway.
+And when building on Intel Mac, resulting binary will
+run on Intel target.
+

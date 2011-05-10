@@ -1,0 +1,12 @@
+<!DOCTYPE RCC><RCC version="1.0">
+ <qresource>
+	<file>../Images/minerva_icon.png</file>
+	<file>../Images/minerva_splash.png</file>
+	<file>../Images/newDocument.png</file>
+    <file>../Images/openDocument.png</file>
+	<file>../Images/saveDocument.png</file>
+	<file>../Images/eye.png</file>
+	<file>../Images/home.png</file>
+</qresource>
+ </RCC>
+ 

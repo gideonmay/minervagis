@@ -1,0 +1,122 @@
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2010, Adam Kubach
+//  All rights reserved.
+//  BSD License: http://www.opensource.org/licenses/bsd-license.html
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include "Minerva/Plugins/Kml/KmlReader.h"
+#include "Minerva/Plugins/Kml/KmlLayer.h"
+
+#include "Minerva/Core/Factory/Readers.h"
+
+#include "boost/filesystem.hpp"
+
+using namespace Minerva::Layers::Kml;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Register readers with the factory.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+namespace
+{
+  namespace MF = Minerva::Core::Factory;
+  MF::RegisterReader _readerForKml ( new KmlReader );
+}
+
+USUL_IMPLEMENT_IUNKNOWN_MEMBERS ( KmlReader, KmlReader::BaseClass );
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Constructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+KmlReader::KmlReader() : BaseClass(),
+  _filters()
+{
+  _filters.push_back ( Filter ( "Google Earth (*.kml)", "*.kml" ) );
+  _filters.push_back ( Filter ( "Google Earth Archive (*.kmz)", "*.kmz" ) );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Destructor.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+KmlReader::~KmlReader()
+{
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Query for interface.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Usul::Interfaces::IUnknown* KmlReader::queryInterface ( unsigned long iid )
+{
+  switch ( iid )
+  {
+    case Usul::Interfaces::IUnknown::IID:
+    case Minerva::Common::IReadFeature::IID:
+      return static_cast<Minerva::Common::IReadFeature*> ( this );
+    default:
+      return 0x0;
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Get the filters for this reader.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+KmlReader::Filters KmlReader::filters() const
+{
+  return _filters;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Can this reader handle the extension?
+//
+///////////////////////////////////////////////////////////////////////////////
+
+bool KmlReader::canHandle ( const std::string& extension ) const
+{
+  for ( Filters::const_iterator iter = _filters.begin(); iter != _filters.end(); ++iter )
+  {
+    const std::string ext ( boost::filesystem::extension ( iter->second ) );
+    if ( ext == extension )
+    {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Read
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Minerva::Core::Data::Feature* KmlReader::readFeature ( const std::string& filename )
+{
+  KmlLayer::RefPtr feature ( new KmlLayer );
+  feature->read ( filename );
+  return feature.release();
+}
