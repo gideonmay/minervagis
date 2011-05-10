@@ -99,10 +99,10 @@ public:
   // Remove the listener.
   void                   removeDataChangedListener ( const Connection& connection );
   
-  // Get the number of children (ITreeNode).
+  // Get the number of children.
   virtual unsigned int        getNumChildNodes() const;
   
-  // Get the child node (ITreeNode).
+  // Get the child node.
   virtual Feature::RefPtr     getChildNode ( unsigned int which );
 
   /// Update.
