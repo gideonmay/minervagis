@@ -509,9 +509,15 @@ void KmlLayer::_parsePlacemark ( const XmlTree::Node& node )
   // Make the data object.
   DataObject::RefPtr object ( Factory::instance().createPlaceMark ( node ) );
   
-  // Get the style, if any.
-	Style::RefPtr style ( this->_style ( object->styleUrl() ) );
-	object->style ( style );
+  Style::RefPtr style ( object->style() );
+  
+  // If the place mark does not have a style, look at the style url.
+  if ( !style )
+  {
+    // Get the style, if any.
+    style = this->_style ( object->styleUrl() );
+    object->style ( style );
+  }
 
   if ( style )
   {
