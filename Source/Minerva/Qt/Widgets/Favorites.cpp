@@ -212,9 +212,6 @@ void Favorites::_addLayer ( Minerva::Core::Data::Feature *parent, Minerva::Core:
     
       // Add the layer.
       container->add ( layer.get() );
-      
-      // Emit the layer added signal.
-      //emit layerAdded ( unknown );
     }
   }
 }
