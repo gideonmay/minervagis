@@ -64,6 +64,9 @@ OGRConvert::Geometry* OGRConvert::geometry ( OGRGeometry* geometry, OGRCoordinat
         return multiGeometry.release();
       }
       break;
+    case wkbNone:
+    case wkbUnknown:
+      return 0x0;
     }
   }
 
@@ -103,18 +106,22 @@ namespace Helper
 
 namespace Helper
 {
-  template <class Vertices>
-  inline void convertAndTransform ( Vertices &vertices, const OGRLineString& line, OGRCoordinateTransformation* transform, double verticalOffset )
+  inline Minerva::Common::Coordinates::RefPtr convertAndTransform ( const OGRLineString& line, OGRCoordinateTransformation* transform, double verticalOffset )
   {
+    const int numPoints ( line.getNumPoints() );    
+    Minerva::Common::Coordinates::RefPtr coordinates ( new Minerva::Common::Coordinates );
+    coordinates->reserve ( numPoints );
+    
     OGRPoint point;
-
-    const int numPoints ( line.getNumPoints() );
-    vertices.reserve ( numPoints );
     for ( int i = 0; i < numPoints; ++i )
     {
       line.getPoint ( i, &point );
-      vertices.push_back ( Helper::convertAndTransform ( point, transform, verticalOffset ) );
+      
+      Minerva::Common::Coordinates::value_type v ( Helper::convertAndTransform ( point, transform, verticalOffset ) );
+      coordinates->addPoint ( v[0], v[1], v[2] );
     }
+    
+    return coordinates;
   }
 }
 
@@ -148,16 +155,12 @@ OGRConvert::Geometry* OGRConvert::point ( OGRPoint* geometry, OGRCoordinateTrans
 OGRConvert::Geometry* OGRConvert::line ( OGRLineString* geometry, OGRCoordinateTransformation *transform, double verticalOffset )
 {
   typedef Minerva::Core::Data::Line Line;
-  typedef Line::Vertices Vertices;
 
   Line::RefPtr line ( new Line );
 
   if ( 0x0 != geometry )
   {
-    Vertices vertices;
-    Helper::convertAndTransform ( vertices, *geometry, transform, verticalOffset );
-
-    line->line ( vertices );
+    line->coordinates ( Helper::convertAndTransform ( *geometry, transform, verticalOffset ) );
   }
 
   return line.release();
@@ -173,7 +176,6 @@ OGRConvert::Geometry* OGRConvert::line ( OGRLineString* geometry, OGRCoordinateT
 OGRConvert::Geometry* OGRConvert::polygon ( OGRPolygon* geometry, OGRCoordinateTransformation *transform, double verticalOffset )
 {
   typedef Minerva::Core::Data::Polygon Polygon;
-  typedef Polygon::Vertices Vertices;
 
   Polygon::RefPtr polygon ( new Polygon );
 
@@ -183,9 +185,9 @@ OGRConvert::Geometry* OGRConvert::polygon ( OGRPolygon* geometry, OGRCoordinateT
     OGRLinearRing *outer ( geometry->getExteriorRing() );
     if ( 0x0 != outer )
     {
-      Vertices vertices;
-      Helper::convertAndTransform ( vertices, *outer, transform, verticalOffset );
-      polygon->outerBoundary ( vertices );
+      Minerva::Core::Data::Line::RefPtr line ( new Minerva::Core::Data::Line );
+      line->coordinates ( Helper::convertAndTransform ( *outer, transform, verticalOffset ) );
+      polygon->outerBoundary ( line );
     }
 
     // Add the inner rings.
@@ -195,9 +197,9 @@ OGRConvert::Geometry* OGRConvert::polygon ( OGRPolygon* geometry, OGRCoordinateT
       OGRLinearRing* ring ( geometry->getInteriorRing ( i ) );
       if ( 0x0 != ring )
       {
-        Vertices vertices;
-        Helper::convertAndTransform ( vertices, *outer, transform, verticalOffset );
-        polygon->addInnerBoundary ( vertices );
+        Minerva::Core::Data::Line::RefPtr line ( new Minerva::Core::Data::Line );
+        line->coordinates ( Helper::convertAndTransform ( *ring, transform, verticalOffset ) );
+        polygon->addInnerBoundary ( line );
       }
     }
   }

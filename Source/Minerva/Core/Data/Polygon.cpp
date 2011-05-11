@@ -15,6 +15,8 @@
 
 #include "Minerva/Common/IPlanetCoordinates.h"
 
+#include "Usul/Threads/Safe.h"
+
 #include "osg/Material"
 #include "osg/MatrixTransform"
 #include "osg/PolygonOffset"
@@ -58,10 +60,10 @@ Polygon::~Polygon()
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void Polygon::outerBoundary ( const Vertices& vertices )
+void Polygon::outerBoundary ( Line::RefPtr line )
 {
   Guard guard ( this );
-  _outerBoundary = vertices;
+  _outerBoundary = line;
 }
 
 
@@ -71,7 +73,7 @@ void Polygon::outerBoundary ( const Vertices& vertices )
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-Polygon::Vertices Polygon::outerBoundary() const
+Line::RefPtr Polygon::outerBoundary() const
 {
   Guard guard ( this );
   return _outerBoundary;
@@ -84,10 +86,10 @@ Polygon::Vertices Polygon::outerBoundary() const
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void Polygon::addInnerBoundary ( const Vertices& vertices )
+void Polygon::addInnerBoundary ( Line::RefPtr line )
 {
   Guard guard ( this->mutex() );
-  _boundaries.push_back ( vertices );
+  _boundaries.push_back ( line );
 }
 
 
@@ -129,32 +131,32 @@ namespace Detail
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-osg::Node* Polygon::_buildGeometry ( const PolyStyle& polyStyle, const Vertices& inVertices, Extents& e, IPlanetCoordinates *planet, IElevationDatabase* elevation )
+osg::Node* Polygon::_buildGeometry ( const PolyStyle& polyStyle, Minerva::Common::Coordinates::RefPtr inVertices, Extents& e, IPlanetCoordinates *planet, IElevationDatabase* elevation )
 {
   // Make sure we have vertices.
-  if ( inVertices.empty() )
+  if ( !inVertices || inVertices->size() < 3 )
     return 0x0;
   
   // Vertices and normals.
   osg::ref_ptr<osg::Vec3Array> vertices ( new osg::Vec3Array );
   osg::ref_ptr<osg::Vec3Array> normals  ( new osg::Vec3Array );
-  osg::ref_ptr<osg::Vec4Array> colors  ( new osg::Vec4Array ( inVertices.size() ) );
+  osg::ref_ptr<osg::Vec4Array> colors  ( new osg::Vec4Array ( inVertices->size() ) );
   osg::Vec4f color ( Usul::Convert::Type<Color,osg::Vec4f>::convert ( polyStyle.color() ) );
   std::fill ( colors->begin(), colors->end(), color );
   
   // Reserve enough rooms.
-  vertices->reserve( inVertices.size() );
-  normals->reserve( inVertices.size() );
+  vertices->reserve ( inVertices->size() );
+  normals->reserve ( inVertices->size() );
   
   Vertices convertedPoints;
-  convertedPoints.reserve ( inVertices.size() );
-
-  for ( Vertices::const_iterator iter = inVertices.begin(); iter != inVertices.end(); ++iter )
+  convertedPoints.reserve ( inVertices->size() );
+  
+  // Expand the vertex.
+  e.expand ( inVertices->extents() );
+  
+  for ( Coordinates::const_iterator iter = inVertices->begin(); iter != inVertices->end(); ++iter )
   {
-    Vertices::value_type v0 ( *iter ), p0;
-    
-    // Expand the vertex.
-    e.expand ( Extents::Vertex ( v0[0], v0[1] ) );
+    Coordinates::value_type v0 ( *iter ), p0;
     
     if ( elevation )
       v0[2] = Minerva::Core::Data::getElevationAtPoint ( v0, elevation, this->altitudeMode() );
@@ -235,10 +237,15 @@ Polygon::Vertex Polygon::_convertToPlanetCoordinates ( const Polygon::Vertex& v,
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-osg::Node* Polygon::_extrudeToGround ( const PolyStyle& polyStyle, const Vertices& inVertices, IPlanetCoordinates *planet, IElevationDatabase* elevation )
+osg::Node* Polygon::_extrudeToGround ( const PolyStyle& polyStyle, Minerva::Common::Coordinates::RefPtr inVertices, IPlanetCoordinates *planet, IElevationDatabase* elevation )
 {
+  if ( !inVertices )
+  {
+    return 0x0;
+  }
+  
   // The number of vertices in the tri-strip.
-  const unsigned int numVertices ( inVertices.size() * 2 );
+  const unsigned int numVertices ( inVertices->size() * 2 );
 
   // Vertices and normals.
   osg::ref_ptr<osg::Vec3Array> vertices ( new osg::Vec3Array );
@@ -255,7 +262,7 @@ osg::Node* Polygon::_extrudeToGround ( const PolyStyle& polyStyle, const Vertice
   convertedPoints.reserve ( numVertices );
 
   // Loop over the vertices.
-  for ( Vertices::const_iterator iter = inVertices.begin(); iter != inVertices.end(); ++iter )
+  for ( Coordinates::const_iterator iter = inVertices->begin(); iter != inVertices->end(); ++iter )
   {
     Vertex top ( *iter );
     Vertex bottom ( top ); bottom[2] = 0.0;
@@ -319,23 +326,24 @@ osg::Node* Polygon::_buildPolygons ( const PolyStyle& polyStyle, IPlanetCoordina
   Extents e;
   
   // Get the outer boundary.
-  Vertices outerBoundary ( this->outerBoundary() );
+  Line::RefPtr outerBoundary ( this->outerBoundary() );
 
-  // Need at least 3 points to make a polygon.
-  if ( outerBoundary.size() < 3 )
+  if ( !outerBoundary )
     return 0x0;
+  
+  // Need at least 3 points to make a polygon.
 
   // TODO: Handle inner boundaries.
   //Boundaries innerBoundaries ( polygon->innerBoundaries() );
 
   osg::ref_ptr<osg::Group> group ( new osg::Group );
   
-  group->addChild ( this->_buildGeometry ( polyStyle, outerBoundary, e, planet, elevation ) );
+  group->addChild ( this->_buildGeometry ( polyStyle, outerBoundary->coordinates(), e, planet, elevation ) );
 
   // Extrude if we are suppose to.
   if ( true == this->extrude() )
   {
-    group->addChild ( this->_extrudeToGround ( polyStyle, outerBoundary, planet, elevation ) );
+    group->addChild ( this->_extrudeToGround ( polyStyle, outerBoundary->coordinates(), planet, elevation ) );
   }
   
   this->extents ( e );
@@ -394,9 +402,12 @@ osg::Node* Polygon::_buildScene ( Style::RefPtr style, IPlanetCoordinates *plane
   
   if ( polyStyle->outline() )
   {
-    Line::RefPtr line ( new Line );
-    line->line ( this->outerBoundary() );
-    group->addChild ( line->buildScene ( style, planet, elevation ) );
+    Line::RefPtr line ( this->outerBoundary() );
+    
+    if ( line )
+    {
+      group->addChild ( line->buildScene ( style, planet, elevation ) );
+    }
   }
   
   // Set state set modes depending on alpha value.

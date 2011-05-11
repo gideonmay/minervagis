@@ -60,25 +60,6 @@ Line::~Line()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Set the line data.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-void Line::line ( const Vertices& data )
-{
-  Coordinates::RefPtr coordinates ( new Coordinates );
-  coordinates->reserve ( data.size() );
-  for ( Vertices::const_iterator iter = data.begin(); iter != data.end(); ++iter )
-  {
-    Vertices::value_type v ( *iter );
-    coordinates->addPoint ( v[0], v[1], v[2] );
-  }
-  this->coordinates ( coordinates );
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
 //  Set the point.
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -257,8 +238,8 @@ void Line::_setState ( osg::StateSet* ss, const Color& color, float width ) cons
   OsgTools::State::StateSet::setLighting  ( ss, false );
   OsgTools::State::StateSet::setLineWidth ( ss, width );
   
-  const osg::StateAttribute::GLModeValue on ( osg::StateAttribute::OVERRIDE | osg::StateAttribute::PROTECTED | osg::StateAttribute::ON );
-  const osg::StateAttribute::GLModeValue off ( osg::StateAttribute::OVERRIDE | osg::StateAttribute::PROTECTED | osg::StateAttribute::OFF );
+  //const osg::StateAttribute::GLModeValue on ( osg::StateAttribute::OVERRIDE | osg::StateAttribute::PROTECTED | osg::StateAttribute::ON );
+  //const osg::StateAttribute::GLModeValue off ( osg::StateAttribute::OVERRIDE | osg::StateAttribute::PROTECTED | osg::StateAttribute::OFF );
 
   if ( this->useShader() )
   {

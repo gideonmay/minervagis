@@ -29,17 +29,12 @@ class MINERVA_EXPORT Line : public Geometry
 {
 public:
   typedef Geometry                         BaseClass;
-  typedef Usul::Math::Vec3d                Vertex;
-  typedef std::vector < Vertex >           Vertices;
   typedef ColorStyle::Color                Color;
   typedef Minerva::Common::Coordinates     Coordinates;
 
   USUL_DECLARE_QUERY_POINTERS ( Line );
 
   Line();
-
-  /// Get/Set the line data.
-  void                  line ( const Vertices& );
 
   /// Get/Set the coordinates.
   void                  coordinates ( Coordinates::RefPtr );
@@ -66,7 +61,7 @@ private:
   void                  _setState ( osg::StateSet*, const Color& color, float width ) const;
 
   Coordinates::RefPtr _coordinates;
-  bool       _tessellate;
+  bool _tessellate;
   bool _useShader;
 };
 
