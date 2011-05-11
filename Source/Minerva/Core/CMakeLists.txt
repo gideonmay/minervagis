@@ -95,7 +95,6 @@ SET ( HEADERS
 	./Functions/SearchDirectory.h
 	./Jobs/BuildRaster.h
 	./Jobs/BuildTiles.h
-	./Layers/ElevationLayerDirectory.h
 	./Layers/LayerInfo.h
 	./Layers/RasterLayer.h
 	./Layers/RasterLayerArcGIS.h
@@ -171,7 +170,6 @@ SET (SOURCES
 ./Functions/SearchDirectory.cpp
 ./Jobs/BuildRaster.cpp
 ./Jobs/BuildTiles.cpp
-./Layers/ElevationLayerDirectory.cpp
 ./Layers/RasterLayer.cpp
 ./Layers/RasterLayerArcGIS.cpp
 ./Layers/RasterLayerArcIMS.cpp
