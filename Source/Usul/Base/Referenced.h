@@ -43,7 +43,7 @@ public:
   /// Get the reference count.
   unsigned long               refCount() const;
 
-  const std::type_info &    typeId() const;
+  const std::type_info& typeId() const;
 
 protected:
 
