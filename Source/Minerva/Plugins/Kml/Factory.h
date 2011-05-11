@@ -25,6 +25,10 @@ namespace XmlTree { class Node; }
 
 namespace Minerva {
   
+  namespace Common {
+    class Coordinates;
+  }
+  
   namespace Core {
     namespace Data {
       class Feature;
@@ -68,6 +72,7 @@ public:
   typedef Usul::Math::Vec3d               Vertex;
   typedef std::vector < Vertex >          Vertices;
   typedef Minerva::Common::Extents        Extents;
+  typedef Minerva::Common::Coordinates    Coordinates;
   
   static Factory& instance();
   
@@ -92,7 +97,7 @@ public:
   PolyStyle*    createPolyStyle ( const XmlTree::Node& ) const;
   IconStyle*    createIconStyle ( const XmlTree::Node& ) const;
   
-  void          parseCoordinates ( const XmlTree::Node& node, Vertices& vertices, Extents& extents ) const;
+  Coordinates*  parseCoordinates ( const XmlTree::Node& node ) const;
 
   void          setFeatureDataMembers ( Minerva::Core::Data::Feature& feature, const XmlTree::Node& node ) const;
 private:

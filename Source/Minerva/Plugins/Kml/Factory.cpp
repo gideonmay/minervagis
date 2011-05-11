@@ -292,27 +292,29 @@ namespace Helper
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void Factory::parseCoordinates ( const XmlTree::Node& node, Vertices& vertices, Extents& extents ) const
+Minerva::Common::Coordinates* Factory::parseCoordinates ( const XmlTree::Node& node ) const
 {
   // Copy the value and remove any commas.
   std::string value ( node.value() );
 
   if ( true == value.empty() )
-    return;
+    return 0x0;
 
   const char* characters ( value.c_str() );
   const char* end ( characters + value.size() );
   char* next ( const_cast<char*> ( characters ) );
 
+  Minerva::Common::Coordinates::RefPtr coordinates ( new Minerva::Common::Coordinates );
   while ( next != end )
   {
     Vertex vertex;
     if ( Helper::parseVec3 ( next, &next, vertex ) )
     {
-      vertices.push_back ( vertex );
-      extents.expand ( Extents::Vertex ( vertex[0], vertex[1] ) );
+      coordinates->addPoint ( vertex[0], vertex[1], vertex[2] );
     }
   }
+  
+  return coordinates.release();
 }
 
 
@@ -403,13 +405,10 @@ Factory::Point* Factory::createPoint ( const XmlTree::Node& node ) const
       point->altitudeMode ( Helper::parseAltitudeMode ( *node ) );
     else if ( "coordinates" == name )
     {
-      Vertices vertices;
-      Extents extents;
-      this->parseCoordinates ( *node, vertices, extents );
-      if ( false == vertices.empty() )
+      Minerva::Common::Coordinates::RefPtr coordinates ( this->parseCoordinates ( *node ) );
+      if ( coordinates && coordinates->size() > 0 )
       {
-        point->point ( vertices.front() );
-        point->extents ( extents );
+        point->point ( coordinates->at ( 0 ) );
       }
     }
     else if ( "extrude" == name )
@@ -444,13 +443,10 @@ Factory::Line* Factory::createLine ( const XmlTree::Node& node ) const
       line->altitudeMode ( Helper::parseAltitudeMode ( *node ) );
     else if ( "coordinates" == name )
     {
-      Vertices vertices;
-      Extents extents;
-      this->parseCoordinates( *node, vertices, extents );
-      if ( false == vertices.empty() )
+      Minerva::Common::Coordinates::RefPtr coordinates ( this->parseCoordinates ( *node ) );
+      if ( coordinates )
       {
-        line->line ( vertices );
-        line->extents ( extents );
+        line->coordinates ( coordinates );
       }
       else if ( "extrude" == name )
       {
@@ -492,9 +488,10 @@ Factory::Polygon* Factory::createPolygon ( const XmlTree::Node& node ) const
       XmlTree::Node::RefPtr coordinates ( linearRing.valid() ? linearRing->children().front() : 0x0 );
       if ( coordinates.valid() )
       {
-        Vertices vertices;
-        this->parseCoordinates( *coordinates, vertices, extents );
-        polygon->outerBoundary ( vertices );
+        Minerva::Common::Coordinates::RefPtr lineCoordinates ( this->parseCoordinates ( *coordinates ) );
+        Minerva::Core::Data::Line::RefPtr line ( new Minerva::Core::Data::Line );
+        line->coordinates ( lineCoordinates );
+        polygon->outerBoundary ( line );
       }
     }
     else if ( "innerBoundaryIs" == name )
@@ -503,9 +500,10 @@ Factory::Polygon* Factory::createPolygon ( const XmlTree::Node& node ) const
       XmlTree::Node::RefPtr coordinates ( linearRing.valid() ? linearRing->children().front() : 0x0 );
       if ( coordinates.valid() )
       {
-        Vertices vertices;
-        this->parseCoordinates( *coordinates, vertices, extents );
-        polygon->addInnerBoundary ( vertices );
+        Minerva::Common::Coordinates::RefPtr lineCoordinates ( this->parseCoordinates ( *coordinates ) );
+        Minerva::Core::Data::Line::RefPtr line ( new Minerva::Core::Data::Line );
+        line->coordinates ( lineCoordinates );
+        polygon->addInnerBoundary ( line );
       }
     }
     else if ( "extrude" == name )

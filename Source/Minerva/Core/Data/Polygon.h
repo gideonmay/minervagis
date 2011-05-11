@@ -32,25 +32,27 @@ class MINERVA_EXPORT Polygon : public Geometry
 {
 public:
   typedef Geometry                         BaseClass;
-  typedef Usul::Math::Vec3d                Vertex;
-  typedef std::vector < Vertex >           Vertices;
-  typedef std::vector<Vertices>            Boundaries;
   typedef ColorStyle::Color                Color;
   typedef Minerva::Common::IPlanetCoordinates IPlanetCoordinates;
   typedef Minerva::Common::IElevationDatabase IElevationDatabase;
+  typedef std::vector<Line::RefPtr> Boundaries;
 
   USUL_DECLARE_QUERY_POINTERS ( Polygon );
 
   Polygon();
 
-  void                  outerBoundary ( const Vertices& );
-  Vertices              outerBoundary() const;
+  void                  outerBoundary ( Line::RefPtr );
+  Line::RefPtr          outerBoundary() const;
 
-  void                  addInnerBoundary ( const Vertices& );
+  void                  addInnerBoundary ( Line::RefPtr );
   const Boundaries&     innerBoundaries() const;
 
 protected:
-
+  
+  typedef Usul::Math::Vec3d            Vertex;
+  typedef std::vector < Vertex >       Vertices;
+  typedef Minerva::Common::Coordinates Coordinates;
+  
   virtual ~Polygon();
   
   /// Build the scene branch for the data object.
@@ -58,14 +60,14 @@ protected:
   
   osg::Node*            _buildPolygons ( const PolyStyle& polyStyle, IPlanetCoordinates *planet, IElevationDatabase* elevation );
   
-  osg::Node*            _buildGeometry ( const PolyStyle& polyStyle, const Vertices& inVertices, Extents& e, IPlanetCoordinates *planet, IElevationDatabase* elevation );
-  osg::Node*            _extrudeToGround ( const PolyStyle& polyStyle, const Vertices& inVertices, IPlanetCoordinates *planet, IElevationDatabase* elevation );
+  osg::Node*            _buildGeometry ( const PolyStyle& polyStyle, Coordinates::RefPtr inVertices, Extents& e, IPlanetCoordinates *planet, IElevationDatabase* elevation );
+  osg::Node*            _extrudeToGround ( const PolyStyle& polyStyle, Coordinates::RefPtr, IPlanetCoordinates *planet, IElevationDatabase* elevation );
 
   Vertex                _convertToPlanetCoordinates ( const Polygon::Vertex& v, IPlanetCoordinates* planet, IElevationDatabase* elevation ) const;
 
 private:
-
-  Vertices _outerBoundary;
+  
+  Line::RefPtr _outerBoundary;
   Boundaries _boundaries;
 };
 
