@@ -18,8 +18,6 @@
 
 #include "Usul/Threads/Guard.h"
 #include "Usul/Threads/RecursiveMutex.h"
-#include "Usul/Threads/ReadWriteLocks.h"
-#include "Usul/Threads/ReadWriteMutex.h"
 
 
 namespace Usul {
@@ -60,20 +58,6 @@ template <> struct MutexTraits < Usul::Threads::RecursiveMutex >
   typedef Usul::Threads::RecursiveMutex MutexType;
   typedef Usul::Threads::Guard<MutexType> ReadLock;
   typedef Usul::Threads::Guard<MutexType> WriteLock;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Read-write mutex.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-template <> struct MutexTraits < Usul::Threads::ReadWriteMutex >
-{
-  typedef Usul::Threads::ReadWriteMutex MutexType;
-  typedef Usul::Threads::ReadLock<MutexType> ReadLock;
-  typedef Usul::Threads::WriteLock<MutexType> WriteLock;
 };
 
 
