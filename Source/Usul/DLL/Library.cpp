@@ -14,7 +14,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Usul/DLL/Library.h"
-#include "Usul/DLL/Listener.h"
 #include "Usul/DLL/Exceptions.h"
 #include "Usul/System/LastError.h"
 #include "Usul/Threads/Variable.h"
@@ -48,18 +47,6 @@ using namespace Usul::DLL;
 namespace Usul {
 namespace DLL {
 namespace Detail {
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  The listeners.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-typedef std::vector < Listener::RefPtr > ListenerVector;
-typedef Usul::Threads::Variable < ListenerVector > Listeners;
-typedef Usul::Threads::Guard < Listeners::MutexType > Guard;
-Listeners _listeners;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -154,9 +141,6 @@ Library::Library ( const std::string &filename ) : BaseClass(),
   // Load the library.
   _module = Usul::DLL::Detail::_load ( filename );
 
-  // Notify listeners.
-  this->callListeners ( ( ( _module ) ? ( "Loaded: " ) : ( "Failed to load: " ) ) +  _filename );
-
   // See if it worked.
   if ( 0x0 == _module )
   {
@@ -194,9 +178,6 @@ Library::~Library()
           << "\n\tSystem error message: " << System::LastError::message();
       std::cout << out << std::endl;
     }
-
-    // Notify listeners.
-    this->callListeners ( ( ( success ) ? ( "Released: " ) : ( "Failed to release: " ) ) +  _filename );
   }
 
   catch ( const std::exception &e )
@@ -221,64 +202,5 @@ Library::~Library()
 Library::Function Library::function ( const std::string &name ) const
 {
   Function fun ( Usul::DLL::Detail::_function ( name, _module ) );
-  if ( 0x0 == fun )
-    this->callListeners ( "No function '" + name + "' in: " + _filename );
   return fun;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Append a listener.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-void Library::append ( Usul::DLL::Listener *l )
-{
-  if ( l )
-  {
-    Detail::Guard guard ( Detail::_listeners.mutex() );
-    Detail::_listeners.value().push_back ( l );
-  }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Remove a listener.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-bool Library::remove ( Usul::DLL::Listener *l )
-{
-  Detail::Guard guard ( Detail::_listeners.mutex() );
-  Detail::ListenerVector::iterator begin ( Detail::_listeners.value().begin() );
-  Detail::ListenerVector::iterator end   ( Detail::_listeners.value().end()   );
-  Detail::ListenerVector::iterator i = std::find ( begin, end, Usul::DLL::Listener::RefPtr ( l ) );
-  if ( end == i )
-    return false;
-  Detail::_listeners.value().erase ( i );
-  return true;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Call the listener.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-void Library::callListeners ( const std::string &message )
-{
-  Detail::Guard guard ( Detail::_listeners.mutex() );
-  Detail::ListenerVector::iterator begin ( Detail::_listeners.value().begin() );
-  Detail::ListenerVector::iterator end   ( Detail::_listeners.value().end()   );
-  for ( Detail::ListenerVector::iterator i = begin; i != end; ++i )
-  {
-    Listener::RefPtr l ( *i );
-    if ( l.valid() )
-    {
-      (*l) ( message );
-    }
-  }
 }

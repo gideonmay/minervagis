@@ -203,9 +203,6 @@ void MainWindowBase::_destroy()
   
   // Release all the plugins.
   this->releasePlugins();
-  
-  // Clear all loaded libraries.
-  Usul::DLL::LibraryPool::instance().clear ( &std::cout );
 
   // Wait here until all jobs are done.
   // It is unlikely that a plugin will create a job in its destructor, but leaving this here to make sure.
