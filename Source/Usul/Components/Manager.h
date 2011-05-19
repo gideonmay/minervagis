@@ -19,7 +19,6 @@
 #include "Usul/Export/Export.h"
 
 #include "Usul/Interfaces/IUnknown.h"
-#include "Usul/Interfaces/IClassFactory.h"
 
 #include <string>
 #include <list>
@@ -51,7 +50,7 @@ public:
   bool                          empty () const { return _unknowns.empty(); }
 
   // Load the plugin.
-  void                          load ( unsigned long iid, const std::string& file );
+  void                          load ( const std::string& file );
 
   // Return list of plugin names. This queries each unknown pointer for IPlugin.
   Strings                       names ( bool sort = true ) const;
@@ -71,11 +70,8 @@ public:
 private:
 
   typedef UnknownSet::iterator UnknownItr;
-  typedef Usul::Interfaces::IClassFactory Factory;
 
   Manager();
-
-  Factory*  _factory ( const std::string &filename );
 
   UnknownSet            _unknowns;
   static Manager *      _instance;

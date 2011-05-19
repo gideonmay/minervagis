@@ -19,9 +19,7 @@
 
 #include "Usul/Components/Manager.h"
 #include "Usul/Config/Config.h"
-#include "Usul/DLL/Loader.h"
 #include "Usul/DLL/Library.h"
-#include "Usul/DLL/LibraryPool.h"
 #include "Usul/File/Path.h"
 #include "Usul/Interfaces/IPlugin.h"
 #include "Usul/Interfaces/IStatusBar.h"
@@ -90,11 +88,9 @@ protected:
 private:
 
   typedef std::vector<PluginInfo> Plugins;
-  typedef std::vector<std::string> Libraries;
 	
   std::string     _directory;
   Plugins         _plugins;
-  Libraries       _libraries;
   mutable Mutex   _mutex;
 };
 
@@ -109,7 +105,6 @@ template < class Document >
 inline Loader< Document >::Loader() : 
   _directory(),
   _plugins(),
-  _libraries(),
   _mutex()
 {
 }
@@ -304,8 +299,12 @@ inline void Loader< Document >::addLibrary ( const std::string &file )
   name += ".so";
 #endif
 
+  PluginInfo plugin;
+  plugin.name = name;
+  plugin.load = true;
+  
   Guard guard ( this->mutex() );
-  _libraries.push_back ( name );
+  _plugins.push_back ( plugin );
 }
 
 
@@ -348,43 +347,12 @@ inline void Loader< Document >::load ( Usul::Interfaces::IUnknown *caller )
       status ( "Loading " + name + "...", true );
 
       // Load the plugin.
-      Usul::Components::Manager::instance().load ( Usul::Interfaces::IPlugin::IID, name );
+      Usul::Components::Manager::instance().load ( name );
     }
  
     // Update progress.
     if ( progress.valid() )
       progress->updateProgressBar ( ++number );
-  }
-
-  // Load the libraries.
-  for ( typename Libraries::const_iterator iter = _libraries.begin(); iter != _libraries.end(); ++iter )
-  {
-    // Get the name.
-    std::string name ( *iter );
-
-    // Let the user know what library we are loading.
-    status ( "Loading " + name + "...", true );
-
-    // Load.
-    try
-    {
-      // Prepend the directory if we have one...
-      if( false == _directory.empty() )
-	      name = _directory + name;
-      
-      Usul::DLL::Library::RefPtr library ( Usul::DLL::Loader::load ( name ) );
-      
-      // Add to our cache.
-      Usul::DLL::LibraryPool::instance().add ( library );
-    }
-    catch ( const std::exception &e )
-    {
-      std::cout << "Error 2012373085: Standard exception caught while trying to load library " << name << ": " << e.what() << std::endl;
-    }
-    catch ( ... )
-    {
-      std::cout << "Error 1001727732: Unknown exception caught while trying to load library " << name << "." << std::endl;
-    }
   }
 }
   

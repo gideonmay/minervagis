@@ -8,10 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Usul/Components/Manager.h"
-#include "Usul/Components/Exceptions.h"
 #include "Usul/DLL/Library.h"
-#include "Usul/DLL/Loader.h"
-#include "Usul/DLL/Exceptions.h"
 #include "Usul/Interfaces/IPlugin.h"
 
 #include <iostream>
@@ -74,56 +71,6 @@ std::string _buildMode ( bool debug )
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Return the function or throw if it fails.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-Usul::DLL::Library::Function _getFunction ( const std::string &name, Usul::DLL::Library *ptr )
-{
-  // The constructor will throw if the pointer is null.
-  Usul::DLL::Library::ValidRefPtr lib ( ptr );
-
-  // Get the function. Note: g++ does not allow a reinterpret_cast.
-  Usul::DLL::Library::Function fun = lib->function ( name );
-
-  // See if we got the function.
-  if ( 0x0 == fun )
-  {
-    Usul::Exceptions::Thrower<Usul::Components::Exceptions::FailedToFindFunction>
-      ( "Error: 1028502101, failed to find function.",
-        " Name: ", name, " in Library: ", lib->filename() );
-  }
-
-  // Return the function pointer.
-  return fun;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Check the build modes.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-void _checkBuildModes ( bool loader, bool justLoaded, Usul::DLL::Library *ptr )
-{
-  // The constructor will throw if the pointer is null.
-  Usul::DLL::Library::ValidRefPtr lib ( ptr );
-
-  // Compare the modes.
-  if ( loader != justLoaded )
-  {
-    // Throw the exception.
-    Usul::Exceptions::Thrower<Usul::Components::Exceptions::MismatchedBuildModes>
-      ( "Error: 4210150186, mismatched build modes.",
-        "\n\tBuild mode for loading module is ", Helper::_buildMode ( loader ),
-        "\n\tBuild mode for '", lib->filename(), "' is ", Helper::_buildMode ( justLoaded ) );
-  }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
 //  End of details.
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -174,22 +121,50 @@ Manager::Manager() :
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void Manager::load ( unsigned long iid, const std::string& file )
+void Manager::load ( const std::string& filename )
 {
   try
 	{
-		// Find the factory
-  	Usul::Interfaces::IClassFactory::ValidQueryPtr factory ( this->_factory ( file ) );
+    // Load the library. It throws if it fails to load.
+    Usul::DLL::Library::ValidRefPtr lib ( new Usul::DLL::Library ( filename ) );
 
-    // Get the IUnknown
-    Usul::Interfaces::IUnknown::QueryPtr unknown ( factory->createInstance ( iid ) );
+    // Cache in our pool.
+    Helper::_pool.insert ( lib.get() );
 
-    // Insert into set of plugins.
-    this->addPlugin ( unknown.get() );
+    // Get the debug function. Note: g++ does not allow a reinterpret_cast.
+    typedef bool (*DebugFunction)();
+    DebugFunction df = (DebugFunction) lib->function ( "usul_is_debug_build" );
+
+    // Make sure it matches.
+    if ( 0x0 != df )
+    {
+      const bool isDebugMode ( df() );
+#ifdef _DEBUG
+      if ( false == isDebugMode) )
+#else
+      if ( true == isDebugMode )
+#endif
+      {
+        throw std::runtime_error ( Usul::Strings::format (
+          "Error: 4210150186, mismatched build modes.",
+          "\n\tBuild mode for loading module is ", Helper::_buildMode ( Helper::_isDebug() ),
+          "\n\tBuild mode for '", filename, "' is ", Helper::_buildMode ( isDebugMode ) ) );
+      }
+    }
+
+    // Look for the function used to initialize a plugin.
+    typedef void (*Initialize)();
+    Initialize initialize ( (Initialize) lib->function ( "usul_plugin_initialize" ) );
+
+    // If we found it then call it.
+    if ( 0x0 != initialize )
+    {
+      initialize();
+    }
   }
 	catch ( const std::exception& e )
 	{
-		std::cout << "Error 4241786283: Exception caught while trying to load " << file << std::endl;
+		std::cout << "Error 4241786283: Exception caught while trying to load " << filename << std::endl;
 		std::cout << "Message: " << e.what() << std::endl;
 	}
 	catch ( ... )
@@ -327,36 +302,4 @@ void Manager::print ( std::ostream &out ) const
     std::copy ( names.begin(), names.end(), std::ostream_iterator<std::string> ( out, "; " ) );
   }
   out << std::endl;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Get the factory for the given file name
-//
-///////////////////////////////////////////////////////////////////////////////
-
-Manager::Factory* Manager::_factory ( const std::string &filename )
-{
-  // Load the library. It throws if it fails to load.
-  Usul::DLL::Library::ValidRefPtr lib ( Usul::DLL::Loader::load ( filename ) );
-
-  // Cache in our pool.
-  Helper::_pool.insert ( lib.get() );
-
-  // Get the debug function. Note: g++ does not allow a reinterpret_cast.
-  typedef bool (*DebugFunction)();
-  DebugFunction df = (DebugFunction) Helper::_getFunction ( "usul_is_debug_build", lib );
-
-  // Make sure it matches.
-  Helper::_checkBuildModes ( Helper::_isDebug(), df(), lib.get() );
-
-  // Get the factory function.
-  typedef Usul::Interfaces::IClassFactory IClassFactory;
-  typedef IClassFactory * (*FactoryFunction)();
-  FactoryFunction ff = (FactoryFunction) Helper::_getFunction ( "usul_get_class_factory", lib );
-
-  // Get the class factory.
-  IClassFactory::ValidRefPtr factory ( ff() );
-  return factory.release();
 }

@@ -22,8 +22,6 @@
 
 #include <string>
 
-namespace Usul { namespace DLL { class Listener; } }
-
 
 namespace Usul {
 namespace DLL {
@@ -55,13 +53,6 @@ public:
 
   // Get the library's filename.
   const std::string &   filename() const { return _filename; }
-
-  // Append/remove notification listener function.
-  static void           append ( Listener * );
-  static bool           remove ( Listener * );
-
-  // Call the listeners of this class.
-  static void           callListeners ( const std::string & );
 
 protected:
 
