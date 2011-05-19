@@ -14,7 +14,6 @@
 #include "Minerva/Core/Algorithms/SubRegion.h"
 
 #include "Usul/Functions/Color.h"
-#include "Usul/Jobs/Job.h"
 #include "Usul/Math/MinMax.h"
 #include "Usul/Math/Vector4.h"
 
