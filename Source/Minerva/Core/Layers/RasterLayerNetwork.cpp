@@ -245,10 +245,7 @@ RasterLayerNetwork::ImagePtr RasterLayerNetwork::_textureImplementation (
   }
 
   // Load the file.
-  ImagePtr image ( this->_readImageFile ( file, this->_imageReaderGet() ) );
-
-  // See if the job has been cancelled.
-  _checkForCanceledJob ( job );
+  ImagePtr image ( this->_readImageFile ( file ) );
 
   // If it failed to load...
   if ( false == image.valid() )
