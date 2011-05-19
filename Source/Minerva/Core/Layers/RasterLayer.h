@@ -124,7 +124,6 @@ protected:
   void                  _logEvent ( const std::string &s );
 
   virtual ImagePtr      _readImageFile ( const std::string & ) const;
-  static ImagePtr       _readImageFile ( const std::string &, ReaderPtr );
 
   // Get the texture.
   virtual ImagePtr      _textureImplementation ( 
@@ -142,6 +141,8 @@ private:
   
   // Register members for serialization.
   void                  _registerMembers();
+  
+  static ImagePtr       _readImageFile ( const std::string &, ReaderPtr );
 
   Alphas _alphas;
   float _alpha;
