@@ -16,8 +16,7 @@
 #ifndef _USUL_THREADS_OBJECT_WITH_MUTEX_CLASS_H_
 #define _USUL_THREADS_OBJECT_WITH_MUTEX_CLASS_H_
 
-#include "Usul/Threads/ReadWriteMutex.h"
-#include "Usul/Threads/ReadWriteLocks.h"
+#include "Usul/Threads/Mutex.h"
 #include "Usul/Threads/MutexTraits.h"
 
 
@@ -27,7 +26,7 @@ namespace Threads {
 
 template < 
   class ValueType_, 
-  class MutexTraits = Usul::Threads::MutexTraits<Usul::Threads::ReadWriteMutex> 
+  class MutexTraits = Usul::Threads::MutexTraits<Usul::Threads::Mutex> 
   > 
 struct Object
 {

@@ -233,8 +233,6 @@ SET ( HEADERS
 ./Threads/Named.h
 ./Threads/Pool.h
 ./Threads/Queue.h
-./Threads/ReadWriteLocks.h
-./Threads/ReadWriteMutex.h
 ./Threads/RecursiveMutex.h
 ./Threads/Safe.h
 ./Threads/Set.h
@@ -287,7 +285,6 @@ SET (SOURCES
 ./Threads/Mutex.cpp
 ./Threads/Named.cpp
 ./Threads/Pool.cpp
-./Threads/ReadWriteMutex.cpp
 ./Threads/RecursiveMutex.cpp
 ./Threads/Task.cpp
 ./Types/Types.cpp
