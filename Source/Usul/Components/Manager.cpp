@@ -140,7 +140,7 @@ void Manager::load ( const std::string& filename )
     {
       const bool isDebugMode ( df() );
 #ifdef _DEBUG
-      if ( false == isDebugMode) )
+      if ( false == isDebugMode )
 #else
       if ( true == isDebugMode )
 #endif
