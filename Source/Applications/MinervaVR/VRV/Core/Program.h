@@ -17,7 +17,6 @@
 #include "Usul/CommandLine/Arguments.h"
 #include "Usul/Components/Loader.h"
 #include "Usul/Components/Manager.h"
-#include "Usul/DLL/LibraryPool.h"
 #include "Usul/Errors/AssertPolicy.h"
 #include "Usul/Errors/CompositePolicy.h"
 #include "Usul/Errors/ThrowingPolicy.h"
@@ -124,9 +123,6 @@ public:
     // Note: We should be able to safely do this now that all components 
     // should have been destroyed.
     Usul::Components::Manager::instance().clear ( &std::cout );
-
-    // Clear the library pool.
-    Usul::DLL::LibraryPool::instance().clear( &std::cout );
 
     // Clear the registry.
     Usul::Registry::Database::destroy();
