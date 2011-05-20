@@ -43,6 +43,7 @@ public:
   typedef std::pair < int, unsigned long > TaskHandle;
   typedef std::map < TaskHandle, Task::RefPtr > TaskMap;
   typedef std::set < Task::RefPtr > TaskSet;
+  typedef Task::Callback Callback;
   typedef std::vector < std::string > Strings;
   typedef Usul::File::Log::RefPtr LogPtr;
 
@@ -51,7 +52,8 @@ public:
   ~Pool();
 
   // Add a task.
-  TaskHandle              addTask ( int priority, Task *task );
+  TaskHandle              addTask ( int priority, Task::RefPtr task );
+  TaskHandle              addTask ( int priority, int id, const std::string& name, Callback started, Callback finished, Callback cancelled, Callback error );
 
   // Cancel all running threads and remove all queued tasks.
   void                    cancel();

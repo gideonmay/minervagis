@@ -175,7 +175,6 @@ void Job::_error()
 
 void Job::_threadFinished()
 {
-
   // Declare up here.
   ScopedDone done ( *this, true );
 
