@@ -24,8 +24,9 @@ using namespace Usul::Threads;
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-Task::Task ( unsigned long id, Callback started, Callback finished, Callback cancelled, Callback error ) : BaseClass(),
+Task::Task ( unsigned long id, const std::string& name, Callback started, Callback finished, Callback cancelled, Callback error ) : BaseClass(),
   _id          ( id ),
+  _name        ( name ),
   _cancelledCB ( cancelled ),
   _errorCB     ( error ),
   _finishedCB  ( finished ),
@@ -53,7 +54,6 @@ Task::~Task()
 
 unsigned long Task::id() const
 {
-  Guard guard ( this->mutex() );
   return _id;
 }
 
@@ -118,17 +118,5 @@ void Task::started()
 
 std::string Task::name() const
 {
-  return BaseClass::name();
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  Set the name.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-void Task::name ( const std::string &n )
-{
-  BaseClass::name ( n );
+  return _name;
 }

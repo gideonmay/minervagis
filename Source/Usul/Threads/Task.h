@@ -24,19 +24,19 @@ namespace Usul {
 namespace Threads {
 
 
-class USUL_EXPORT Task : public Usul::Base::Object
+class USUL_EXPORT Task : public Usul::Base::Referenced
 {
 public:
 
   // Useful typedefs.
-  typedef Usul::Base::Object BaseClass;
+  typedef Usul::Base::Referenced BaseClass;
   typedef boost::function<void ()> Callback;
 
   // Smart-pointer definitions.
   USUL_DECLARE_REF_POINTERS ( Task );
 
   // Constructor
-  Task ( unsigned long id, Callback started, Callback finished, Callback cancelled, Callback error );
+  Task ( unsigned long id, const std::string& name, Callback started, Callback finished, Callback cancelled, Callback error );
 
   unsigned long id() const;
   void cancelled();
@@ -44,8 +44,7 @@ public:
   void finished();
   void started();
 
-  virtual std::string       name() const;
-  void                      name ( const std::string & );
+  std::string name() const;
 
 protected:
 
@@ -53,6 +52,7 @@ protected:
   virtual ~Task();
 
 	unsigned long _id;
+  std::string _name;
   Callback _cancelledCB;
   Callback _errorCB;
   Callback _finishedCB;

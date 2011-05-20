@@ -40,64 +40,6 @@ Manager *Manager::_instance ( 0x0 );
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Internal task class.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-namespace Usul
-{
-  namespace Jobs
-  {
-    namespace Detail
-    {
-      class Task : public Usul::Threads::Task
-      {
-      public:
-
-        typedef Usul::Threads::Task BaseClass;
-
-        Task ( Usul::Jobs::Job *job, Manager* manager ) : 
-        BaseClass ( job->id(), boost::bind ( &Job::_threadStarted, job ), Task::Callback(), boost::bind ( &Job::_threadCancelled, job ), boost::bind ( &Job::_threadError, job ) ), 
-          _job ( job ),
-          _manager ( manager )
-        {
-          _finishedCB = boost::bind ( &Task::_taskFinished, this );
-
-          BaseClass::name ( ( true == _job.valid() ) ? _job->name() : std::string() );
-        }
-
-        virtual std::string name() const
-        {
-          return ( ( true == _job.valid() ) ? _job->name() : BaseClass::name() );
-        }
-
-      protected:
-
-        virtual ~Task()
-        {
-        }
-        
-        void _taskFinished()
-        {
-          // Call the job's callback first.
-          if ( _job.valid() )
-            _job->_threadFinished();
-          
-          _finishedCB = Task::Callback();
-        }
-
-      private:
-
-        Usul::Jobs::Job::RefPtr _job;
-        Manager *_manager;
-      };
-    }
-  }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
 //  Constructor.
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -188,12 +130,18 @@ void Manager::addJob ( Job::RefPtr job )
   if ( true == job.valid() )
   {
     job->_setId ( this->nextJobId() );
-    Usul::Jobs::Detail::Task::RefPtr task ( new Usul::Jobs::Detail::Task ( job.get(), this ) );
 
     this->_logEvent ( "Adding job", job );
     {
       Guard guard ( this );
-      _pool.addTask ( job->priority(), task.get() );
+      _pool.addTask ( 
+        job->priority(), 
+        job->id(), 
+        job->name(), 
+        boost::bind ( &Job::_threadStarted, job ), 
+        boost::bind ( &Job::_threadFinished, job ), 
+        boost::bind ( &Job::_threadCancelled, job ), 
+        boost::bind ( &Job::_threadError, job ) );
     }
     this->_logEvent ( "Done adding job", job );
   }

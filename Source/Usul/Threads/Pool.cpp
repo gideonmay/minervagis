@@ -109,7 +109,7 @@ void Pool::_destroy()
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-Pool::TaskHandle Pool::addTask ( int priority, Task *task )
+Pool::TaskHandle Pool::addTask ( int priority, Task::RefPtr task )
 {
   // Check input.
   if ( 0x0 == task )
@@ -118,10 +118,10 @@ Pool::TaskHandle Pool::addTask ( int priority, Task *task )
   // Make handle.
   TaskHandle key ( priority, task->id() );
 
-  // Add task. Local reference may help with stability.
+  // Add task.
   {
     Guard guard ( this );
-    _queue[key] = Task::RefPtr ( task );
+    _queue[key] = task;
   }
 
   // Make sure the threads are started.
@@ -129,6 +129,19 @@ Pool::TaskHandle Pool::addTask ( int priority, Task *task )
 
   // Return key.
   return key;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Add a task.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Pool::TaskHandle Pool::addTask ( int priority, int id, const std::string& name, Callback started, Callback finished, Callback cancelled, Callback error )
+{
+  Task::RefPtr task ( new Task ( id, name, started, finished, cancelled, error ) );
+  return this->addTask ( priority, task );
 }
 
 
