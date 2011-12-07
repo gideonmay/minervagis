@@ -26,6 +26,7 @@ IF (COLLADA_INCLUDE_DIR AND COLLADA14DOM_LIBRARY)
 ENDIF (COLLADA_INCLUDE_DIR AND COLLADA14DOM_LIBRARY)
 
 add_subdirectory ( Kml )
+add_subdirectory ( AoIIntersection )
 
 IF ( SPATIALITE_FOUND AND SQLITE_FOUND )
 	add_subdirectory ( OSM )
