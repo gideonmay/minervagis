@@ -18,8 +18,10 @@
 
 #include "MainWindowBase.h"
 
+#ifndef Q_MOC_RUN
 #include "Minerva/Document/MinervaDocument.h"
 #include "Minerva/Document/CameraPathController.h"
+#endif
 
 namespace Ui { class MainWindow; }
 class Viewer;

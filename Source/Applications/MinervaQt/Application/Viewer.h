@@ -10,9 +10,11 @@
 #ifndef __MINERVA_QT_VIEWER_H__
 #define __MINERVA_QT_VIEWER_H__
 
+#ifndef Q_MOC_RUN
 #include "Minerva/Document/MinervaDocument.h"
 #include "Minerva/Document/CameraPath.h"
 #include "Minerva/Document/SceneView.h"
+#endif
 
 #include "Minerva/Core/Navigator.h"
 #include "Minerva/Core/Data/CameraState.h"
