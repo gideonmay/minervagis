@@ -18,8 +18,10 @@
 
 #include "Minerva/Qt/Widgets/Export.h"
 
+#ifndef Q_MOC_RUN
 #include "Minerva/Document/AnimationController.h"
 #include "Minerva/Document/MinervaDocument.h"
+#endif
 
 #include "Usul/Threads/RecursiveMutex.h"
 #include "Usul/Threads/Guard.h"
