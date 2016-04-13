@@ -1,0 +1,1 @@
+Minerva is a program for viewing geospatial data that works on Windows, Mac, and Linux. It unifies standard GIS capabilities with high-performance, 3D visualization.
